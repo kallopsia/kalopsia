@@ -18,11 +18,11 @@ export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
   if (!product) {
-    return { title: "Produk Tidak Ditemukan — NOTEBOOK // ARCHIVE" };
+    return { title: "Produk Tidak Ditemukan — KALOPSIA TECH" };
   }
 
   return {
-    title: `${product.nama} (${formatSrp(product.srp)}) — NOTEBOOK // ARCHIVE`,
+    title: `${product.nama} (${formatSrp(product.srp)}) — KALOPSIA TECH`,
     description: `${product.brand} ${product.nama}. Spesifikasi: ${product.spesifikasiText}. Pesan lewat WhatsApp.`,
   };
 }
@@ -83,7 +83,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               ringkasan={product.spesifikasi}
               notes={product.catatan}
               kodeBarang={product.kodeBarang}
-              m1VsLama={product.m1VsLama}
             />
           </div>
         </div>

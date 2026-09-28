@@ -52,7 +52,7 @@ export default function Footer() {
 
           {/* Right: copyright */}
           <div className="text-[13px] md:text-[15px] whitespace-nowrap">
-            &copy;{new Date().getFullYear()} teenage engineering
+            &copy;{new Date().getFullYear()} KALOPSIA TECH
           </div>
         </div>
       </div>

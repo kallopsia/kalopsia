@@ -35,7 +35,6 @@ function serializeDiff(diff: ImportDiff) {
       spesifikasi: clip(row.spesifikasi),
       notes: clip(row.notes),
       srp: row.srp,
-      m1_vs_lama: clip(row.m1_vs_lama),
     })),
     changed: diff.changed.map((item) => ({
       rowNumber: item.row.rowNumber,
@@ -118,7 +117,7 @@ export async function POST(request: Request) {
   const supabase = getSupabaseServiceClient();
   const { data: existing, error: existingError } = await supabase
     .from("products")
-    .select("id,kode_barang,spesifikasi,notes,srp,m1_vs_lama,image_urls,is_active");
+    .select("id,kode_barang,spesifikasi,notes,srp,image_urls,is_active");
   if (existingError) {
     return NextResponse.json(
       { error: `Gagal membaca produk dari database: ${existingError.message}` },

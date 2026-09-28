@@ -1,8 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import ProductCatalog from "@/components/ProductCatalog";
 import CatalogPagination from "@/components/CatalogPagination";
-import { getProducts, collectKategori, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
+import CatalogEmptyState from "@/components/CatalogEmptyState";
+import {
+  getProducts,
+  getCatalogStatus,
+  collectKategori,
+  PRODUCTS_REVALIDATE_SECONDS,
+} from "@/lib/products";
 
 interface KategoriPageProps {
   params: {
@@ -22,16 +29,20 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: KategoriPageProps): Promise<Metadata> {
   return {
-    title: `Katalog ${params.kategori} — NOTEBOOK // ARCHIVE`,
-    description: `Semua unit laptop kategori ${params.kategori} pada inventaris notebook archive.`,
+    title: `Katalog ${params.kategori} — KALOPSIA TECH`,
+    description: `Semua unit laptop kategori ${params.kategori} pada inventaris KALOPSIA TECH.`,
   };
 }
 
 export default async function KategoriPage({ params, searchParams }: KategoriPageProps) {
   const products = await getProducts();
+  const status = await getCatalogStatus();
   const kategori = params.kategori.toLowerCase();
-  const filtered = products.filter((product) => product.kategori.includes(kategori));
   const allKategori = collectKategori(products);
+
+  if (products.length > 0 && !allKategori.includes(kategori)) notFound();
+
+  const filtered = products.filter((product) => product.kategori.includes(kategori));
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const page = Math.min(Math.max(1, Number(searchParams.page) || 1), totalPages);
@@ -63,15 +74,22 @@ export default async function KategoriPage({ params, searchParams }: KategoriPag
               {item}
             </Link>
           ))}
-          <span className="text-[#767676]">{filtered.length} unit</span>
         </div>
       </section>
 
       <section className="w-full px-[16px] pb-[24px] md:px-0 md:pb-0">
-        <ProductCatalog products={pageItems} />
+        {products.length === 0 ? (
+          <div className="max-w-[1280px] mx-auto md:px-[32px]">
+            <CatalogEmptyState status={status} />
+          </div>
+        ) : (
+          <ProductCatalog products={pageItems} />
+        )}
       </section>
 
-      <CatalogPagination page={page} totalPages={totalPages} basePath={`/katalog/${kategori}`} />
+      {products.length > 0 && (
+        <CatalogPagination page={page} totalPages={totalPages} basePath={`/katalog/${kategori}`} />
+      )}
     </div>
   );
 }

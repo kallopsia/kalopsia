@@ -4,7 +4,7 @@ import BulkImageForm from "@/components/admin/BulkImageForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Gambar Massal — NOTEBOOK // ARCHIVE" };
+export const metadata = { title: "Admin // Gambar Massal — KALOPSIA TECH" };
 
 export default async function AdminImagesPage() {
   await requireAdmin();

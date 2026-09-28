@@ -21,7 +21,7 @@ const NAV_COLUMNS: NavColumn[] = [
       </svg>
     ),
     links: [
-      { label: "semua laptop", href: "/" },
+      { label: "produktifitas", href: "/katalog/produktivitas" },
       { label: "gaming", href: "/katalog/gaming" },
       { label: "ultrabook", href: "/katalog/ultrabook" },
     ],
@@ -72,10 +72,10 @@ export default function Header() {
           {/* Column 1: store logo */}
           <Link href="/" className="flex flex-col leading-[1.05] tracking-tight group pr-[16px]">
             <span className="text-[20px] font-light text-[#0F0E12] group-hover:text-[#0071BB] transition-colors">
-              notebook
+              KALOPSIA
             </span>
             <span className="text-[20px] font-light text-[#0F0E12] group-hover:text-[#0071BB] transition-colors">
-              archive
+              TECH
             </span>
           </Link>
 

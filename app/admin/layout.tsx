@@ -3,7 +3,7 @@ import { ToastProvider } from "@/components/admin/Toast";
 import AdminNav from "@/components/admin/AdminNav";
 
 export const metadata: Metadata = {
-  title: "Admin — NOTEBOOK // ARCHIVE",
+  title: "Admin — KALOPSIA TECH",
   robots: { index: false, follow: false },
 };
 

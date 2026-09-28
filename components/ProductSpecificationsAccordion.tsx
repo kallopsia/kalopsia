@@ -8,7 +8,6 @@ interface ProductSpecificationsAccordionProps {
   ringkasan: SpecRingkas;
   notes: string;
   kodeBarang: string;
-  m1VsLama: string;
 }
 
 type SpecItem = { key: string; label: string; value?: string };
@@ -20,7 +19,6 @@ export default function ProductSpecificationsAccordion({
   ringkasan,
   notes,
   kodeBarang,
-  m1VsLama,
 }: ProductSpecificationsAccordionProps) {
   const categories: SpecCategory[] = [
     {
@@ -48,10 +46,7 @@ export default function ProductSpecificationsAccordion({
       id: "identitas",
       title: "IDENTITAS UNIT",
       summary: kodeBarang,
-      items: [
-        { key: "kode", label: "Kode Barang", value: kodeBarang },
-        { key: "m1", label: "M1 vs Lama", value: m1VsLama },
-      ],
+      items: [{ key: "kode", label: "Kode Barang", value: kodeBarang }],
     },
     {
       id: "catatan",

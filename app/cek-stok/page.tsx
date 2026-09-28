@@ -1,7 +1,8 @@
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import CatalogPagination from "@/components/CatalogPagination";
-import { getProducts, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
+import CatalogEmptyState from "@/components/CatalogEmptyState";
+import { getProducts, getCatalogStatus, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
 import { formatSrp } from "@/lib/pricing";
 
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
@@ -14,6 +15,7 @@ interface CekStokPageProps {
 
 export default async function CekStokPage({ searchParams }: CekStokPageProps) {
   const products = await getProducts();
+  const status = await getCatalogStatus();
   const query = (searchParams.q || "").trim().toLowerCase();
 
   const filtered = query
@@ -26,6 +28,14 @@ export default async function CekStokPage({ searchParams }: CekStokPageProps) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const page = Math.min(Math.max(1, Number(searchParams.page) || 1), totalPages);
   const pageItems = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  if (products.length === 0) {
+    return (
+      <PageShell kicker="INFO // STOK GUDANG" title="Cek Stok">
+        <CatalogEmptyState status={status} />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell kicker="INFO // STOK GUDANG" title="Cek Stok">

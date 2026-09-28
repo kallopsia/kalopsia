@@ -18,7 +18,6 @@ export type ProductFormInitial = {
   spesifikasi: string;
   notes: string | null;
   srp: number;
-  m1_vs_lama: string | null;
   is_active: boolean;
   image_urls: string[];
 };
@@ -38,7 +37,6 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
   const [spesifikasi, setSpesifikasi] = useState(initial?.spesifikasi ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [srp, setSrp] = useState<string>(String(initial?.srp ?? 0));
-  const [m1VsLama, setM1VsLama] = useState(initial?.m1_vs_lama ?? "");
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.image_urls ?? []);
   const [saving, setSaving] = useState(false);
@@ -57,7 +55,6 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
       spesifikasi: spesifikasi.trim(),
       notes: notes.trim() || null,
       srp: srpNumber,
-      m1_vs_lama: m1VsLama.trim() || null,
       is_active: isActive,
       image_urls: imageUrls,
     };
@@ -154,21 +151,6 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
             placeholder="(BP NEO)"
             className={inputClass}
           />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="m1_vs_lama">
-            M1 vs LAMA
-          </label>
-          <input
-            id="m1_vs_lama"
-            value={m1VsLama}
-            onChange={(event) => setM1VsLama(event.target.value)}
-            placeholder="-"
-            className={inputClass}
-          />
-          <p className="mt-[4px] text-[11px] uppercase tracking-[0.08em] text-[#767676]">
-            kolom M1 tidak pernah disimpan maupun ditampilkan
-          </p>
         </div>
       </div>
 

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import ProductCatalog from "@/components/ProductCatalog";
 import CatalogToolbar from "@/components/CatalogToolbar";
 import CatalogPagination from "@/components/CatalogPagination";
-import { getProducts, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
+import CatalogEmptyState from "@/components/CatalogEmptyState";
+import { getProducts, getCatalogStatus, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
 
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export const metadata: Metadata = {
-  title: "NOTEBOOK // ARCHIVE — Katalog Laptop",
+  title: "KALOPSIA TECH — Katalog Laptop",
   description:
     "Katalog laptop baru dari Acer, ASUS, Lenovo, Apple, HP, Dell, MSI, dan lainnya. Pesan lewat WhatsApp.",
 };
@@ -20,6 +21,7 @@ interface HomePageProps {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const products = await getProducts();
+  const status = await getCatalogStatus();
 
   const query = (searchParams.q || "").trim();
   const brand = (searchParams.brand || "").trim();
@@ -45,19 +47,27 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         explore products
       </h1>
 
-      <CatalogToolbar
-        query={query}
-        brand={brand}
-        brands={brands}
-        total={products.length}
-        shown={filtered.length}
-      />
+      {products.length === 0 ? (
+        <section className="max-w-[1280px] mx-auto w-full px-[16px] md:px-[32px] pt-[24px] md:pt-[40px] pb-[24px]">
+          <CatalogEmptyState status={status} />
+        </section>
+      ) : (
+        <>
+          <CatalogToolbar
+            query={query}
+            brand={brand}
+            brands={brands}
+            total={products.length}
+            shown={filtered.length}
+          />
 
-      <section className="w-full px-[16px] pb-[24px] md:px-0 md:pb-0">
-        <ProductCatalog products={pageItems} />
-      </section>
+          <section className="w-full px-[16px] pb-[24px] md:px-0 md:pb-0">
+            <ProductCatalog products={pageItems} />
+          </section>
 
-      <CatalogPagination page={page} totalPages={totalPages} params={{ q: query, brand }} />
+          <CatalogPagination page={page} totalPages={totalPages} params={{ q: query, brand }} />
+        </>
+      )}
     </div>
   );
 }

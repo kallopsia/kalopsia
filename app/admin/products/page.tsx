@@ -10,7 +10,7 @@ import type { ProductRow } from "@/types/product";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Produk — NOTEBOOK // ARCHIVE" };
+export const metadata = { title: "Admin // Produk — KALOPSIA TECH" };
 
 interface ProductsPageProps {
   searchParams: {
@@ -193,7 +193,6 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
               <SortHeader label="Spesifikasi" field="spesifikasi" sort={query.sort} dir={query.dir} params={searchParams} />
               <th className={tableHeadClass}>Notes</th>
               <SortHeader label="SRP" field="srp" sort={query.sort} dir={query.dir} params={searchParams} />
-              <th className={tableHeadClass}>M1 vs LAMA</th>
               <th className={tableHeadClass}>Status</th>
               <th className={`${tableHeadClass} text-right`}>Aksi</th>
             </tr>
@@ -201,7 +200,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
           <tbody className="divide-y divide-[#D6D6D6]">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-[16px] text-[13px] text-[#767676]">
+                <td colSpan={7} className="p-[16px] text-[13px] text-[#767676]">
                   Tidak ada produk yang cocok dengan filter ini.
                 </td>
               </tr>
@@ -243,9 +242,6 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
                       ) : (
                         <span className={badgeClass("grey")}>belum tersedia</span>
                       )}
-                    </td>
-                    <td className={`${tableCellClass} text-[12px] text-[#767676]`}>
-                      {row.m1_vs_lama || "-"}
                     </td>
                     <td className={tableCellClass}>
                       <span className={badgeClass(row.is_active ? "green" : "grey")}>

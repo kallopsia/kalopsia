@@ -1,15 +1,14 @@
 /**
  * Seed katalog produk dari file Excel (sheet LAPTOP) ke Supabase.
  *
- *   npx tsx scripts/seed-from-xlsx.ts [path/ke/file.xlsx] [--snapshot-only] [--missing=deactivate|keep|delete]
+ *   npx tsx scripts/seed-from-xlsx.ts [path/ke/file.xlsx] [--missing=deactivate|keep|delete]
  *   npm run db:seed
  *
  * Logika parsing & upsert memakai modul yang sama dengan impor admin
  * (lib/xlsx-parser.ts + lib/import.ts) sehingga hasilnya identik.
- * Kolom M1 tidak pernah dibaca, dan image_urls tidak pernah disentuh.
+ * Kolom M1 dan M1 vs LAMA tidak pernah dibaca, dan image_urls tidak pernah disentuh.
  */
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,7 +18,6 @@ import type { ProductRow } from "../types/product";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_FILE = join(projectRoot, "PL_26_SEPT.xlsx");
-const SNAPSHOT_PATH = join(projectRoot, "data", "products.json");
 
 function loadEnv(): void {
   for (const file of [".env.local", ".env"]) {
@@ -35,24 +33,10 @@ function loadEnv(): void {
   }
 }
 
-function stableId(kodeBarang: string): string {
-  const hash = createHash("md5").update(kodeBarang).digest("hex");
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(
-    17,
-    20
-  )}-${hash.slice(20, 32)}`;
-}
-
-function writeSnapshot(rows: ProductRow[]): void {
-  writeFileSync(SNAPSHOT_PATH, `${JSON.stringify(rows, null, 2)}\n`, "utf8");
-  console.log(`• Snapshot fallback ditulis: data/products.json (${rows.length} produk)`);
-}
-
 async function main() {
   const args = process.argv.slice(2);
   const flags = args.filter((arg) => arg.startsWith("--"));
   const positional = args.filter((arg) => !arg.startsWith("--"));
-  const snapshotOnly = flags.includes("--snapshot-only");
   const missingFlag = flags.find((flag) => flag.startsWith("--missing="));
   const missingAction: MissingAction = (missingFlag?.split("=")[1] as MissingAction) || "deactivate";
 
@@ -86,35 +70,12 @@ async function main() {
     console.log(`  ✗ baris ${error.rowNumber ?? "-"}: ${error.message}`)
   );
 
-  const now = new Date().toISOString();
-  const snapshot: ProductRow[] = parsed.rows.map((row) => ({
-    id: stableId(row.kode_barang),
-    kode_barang: row.kode_barang,
-    spesifikasi: row.spesifikasi,
-    notes: row.notes,
-    srp: row.srp,
-    m1_vs_lama: row.m1_vs_lama,
-    // URL gambar hanya bisa dikelola dari admin (Cloudinary). File Excel tidak
-    // pernah memuat gambar, jadi snapshot memulai dengan array kosong.
-    image_urls: [],
-    is_active: true,
-    created_at: now,
-    updated_at: now,
-  }));
-  writeSnapshot(snapshot);
-
-  if (snapshotOnly) {
-    console.log("• --snapshot-only: tidak menghubungi Supabase.");
-    return;
-  }
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
     console.error(
       "\nNEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diisi di .env.local.\n" +
-        "Isi dulu (lihat docs/SETUP.md), lalu jalankan ulang: npm run db:seed\n" +
-        "Snapshot lokal sudah ditulis, jadi storefront tetap bisa jalan sementara."
+        "Isi dulu (lihat docs/SETUP.md), lalu jalankan ulang: npm run db:seed"
     );
     process.exit(1);
   }

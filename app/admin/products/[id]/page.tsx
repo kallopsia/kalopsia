@@ -7,7 +7,7 @@ import ProductForm from "@/components/admin/ProductForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Ubah Produk — NOTEBOOK // ARCHIVE" };
+export const metadata = { title: "Admin // Ubah Produk — KALOPSIA TECH" };
 
 interface EditProductPageProps {
   params: { id: string };
@@ -51,7 +51,6 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           spesifikasi: product.spesifikasi,
           notes: product.notes,
           srp: Number(product.srp) || 0,
-          m1_vs_lama: product.m1_vs_lama,
           is_active: product.is_active,
           image_urls: product.image_urls || [],
         }}

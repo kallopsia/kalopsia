@@ -5,7 +5,7 @@ import type { ImportLogInsert } from "@/types/import-log";
 import { formatSrp } from "./pricing";
 
 export type MissingAction = "deactivate" | "keep" | "delete";
-export type ChangedField = "spesifikasi" | "notes" | "srp" | "m1_vs_lama";
+export type ChangedField = "spesifikasi" | "notes" | "srp";
 
 export type FieldChange = {
   field: ChangedField;
@@ -53,7 +53,6 @@ export const FIELD_LABELS: Record<ChangedField, string> = {
   spesifikasi: "Spesifikasi",
   notes: "Notes",
   srp: "SRP",
-  m1_vs_lama: "M1 vs LAMA",
 };
 
 function text(value: string | null | undefined): string {
@@ -74,7 +73,6 @@ function toUpsertPayload(row: ImportRow) {
     spesifikasi: row.spesifikasi,
     notes: row.notes,
     srp: row.srp,
-    m1_vs_lama: row.m1_vs_lama,
     is_active: true,
   };
 }
@@ -101,7 +99,6 @@ function diffRow(row: ImportRow, current: ProductRow): FieldChange[] {
       to: displayChange("srp", row.srp),
     });
   }
-  push("m1_vs_lama", current.m1_vs_lama, row.m1_vs_lama);
 
   if (!current.is_active) {
     changes.push({

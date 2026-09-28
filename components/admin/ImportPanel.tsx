@@ -38,7 +38,6 @@ type Preview = {
       spesifikasi: string;
       notes: string;
       srp: number;
-      m1_vs_lama: string;
     }[];
     changed: { rowNumber: number; kode_barang: string; changes: FieldChange[] }[];
     missing: {
@@ -172,8 +171,8 @@ export default function ImportPanel() {
         </div>
         <div className="text-[14px] text-[#0F0E12] mb-[16px]">
           Hanya sheet <strong>LAPTOP</strong> yang dibaca (TELCO, PC HOM ELE, SOF COM SUP diabaikan).
-          Kolom yang dipakai: KODEBARANG, SPESIFIKASI, NOTES, SRP, M1 vs LAMA. Kolom{" "}
-          <strong>M1 diabaikan total</strong>.
+          Kolom yang dipakai: KODEBARANG, SPESIFIKASI, NOTES, SRP. Kolom{" "}
+          <strong>M1 dan M1 vs LAMA diabaikan total</strong>.
         </div>
 
         <div className="flex flex-wrap items-center gap-[12px]">

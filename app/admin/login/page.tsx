@@ -3,7 +3,7 @@ import LoginForm from "@/components/admin/LoginForm";
 import { SUPABASE_MISSING_MESSAGE, isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Masuk Admin — NOTEBOOK // ARCHIVE",
+  title: "Masuk Admin — KALOPSIA TECH",
   robots: { index: false, follow: false },
 };
 
@@ -28,7 +28,7 @@ export default function AdminLoginPage({ searchParams }: LoginPageProps) {
     <div className="w-full flex-1 flex items-start justify-center bg-[#F5F5F5] px-[16px] py-[48px] md:py-[96px]">
       <div className="w-full max-w-[400px]">
         <div className="text-[11px] uppercase tracking-[0.08em] text-[#767676] mb-[4px]">
-          NOTEBOOK ARCHIVE // ADMIN
+          KALOPSIA TECH // ADMIN
         </div>
         <h1 className="text-[24px] md:text-[32px] font-light leading-tight text-[#0F0E12] mb-[24px]">
           masuk area admin

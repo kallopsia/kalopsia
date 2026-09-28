@@ -5,7 +5,6 @@ export type ProductRow = {
   spesifikasi: string;
   notes: string | null;
   srp: number;
-  m1_vs_lama: string | null;
   image_urls: string[];
   is_active: boolean;
   created_at: string;
@@ -14,7 +13,7 @@ export type ProductRow = {
 
 export type ProductInsert = Pick<
   ProductRow,
-  "kode_barang" | "spesifikasi" | "notes" | "srp" | "m1_vs_lama" | "image_urls" | "is_active"
+  "kode_barang" | "spesifikasi" | "notes" | "srp" | "image_urls" | "is_active"
 >;
 
 export type SpecRingkas = {
@@ -41,7 +40,6 @@ export type Product = {
   catatan: string;
   spesifikasiText: string;
   spesifikasi: SpecRingkas;
-  m1VsLama: string;
   gambar: string[];
   isActive: boolean;
   updatedAt: string;

@@ -6,9 +6,9 @@ export const LAPTOP_SHEET_NAME = "LAPTOP";
 // Kolom yang wajib ada di baris header.
 export const REQUIRED_COLUMNS = ["KODEBARANG", "SPESIFIKASI", "SRP"] as const;
 // Kolom opsional: bila tidak ada, nilainya null.
-export const OPTIONAL_COLUMNS = ["NOTES", "M1 vs LAMA"] as const;
-// Kolom M1 sengaja diabaikan total: tidak pernah disimpan maupun ditampilkan.
-export const IGNORED_COLUMNS = ["M1"] as const;
+export const OPTIONAL_COLUMNS = ["NOTES"] as const;
+// Kolom M1 dan M1 vs LAMA sengaja diabaikan total: tidak pernah disimpan maupun ditampilkan.
+export const IGNORED_COLUMNS = ["M1", "M1 vs LAMA"] as const;
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -25,7 +25,6 @@ export type ImportRow = {
   spesifikasi: string;
   notes: string | null;
   srp: number;
-  m1_vs_lama: string | null;
 };
 
 export type ImportError = {
@@ -46,7 +45,6 @@ const rowSchema = z.object({
   spesifikasi: z.string().trim().min(1, "SPESIFIKASI kosong"),
   notes: z.string().trim().nullable().optional(),
   srp: z.number().int().min(0),
-  m1_vs_lama: z.string().trim().nullable().optional(),
 });
 
 function normalizeHeader(value: unknown): string {
@@ -171,7 +169,6 @@ export function parseLaptopWorkbook(data: ArrayBuffer | Uint8Array): ParseResult
       spesifikasi: textOrNull(cell(raw, "SPESIFIKASI")) ?? "",
       notes: textOrNull(cell(raw, "NOTES")),
       srp: parseSrp(cell(raw, "SRP")),
-      m1_vs_lama: textOrNull(cell(raw, "M1 vs LAMA")),
     };
 
     const parsed = rowSchema.safeParse(candidate);
@@ -181,7 +178,7 @@ export function parseLaptopWorkbook(data: ArrayBuffer | Uint8Array): ParseResult
       continue;
     }
 
-    rows.push({ rowNumber, ...parsed.data, notes: parsed.data.notes ?? null, m1_vs_lama: parsed.data.m1_vs_lama ?? null });
+    rows.push({ rowNumber, ...parsed.data, notes: parsed.data.notes ?? null });
   }
 
   return { sheetName, rows, errors, warnings, dataRowCount };

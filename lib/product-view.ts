@@ -57,7 +57,6 @@ export function deriveKategori(spesifikasi: string, brand: string): string[] {
   if (GAMING_RE.test(text)) kategori.push("gaming");
   if (ULTRABOOK_RE.test(text)) kategori.push("ultrabook");
   if (PRODUKTIVITAS_RE.test(text)) kategori.push("produktivitas");
-  if (kategori.length === 0) kategori.push("laptop");
   return kategori;
 }
 
@@ -122,7 +121,6 @@ export function toProduct(row: ProductRow): Product {
     catatan: row.notes ? normalizeSpace(row.notes) : "",
     spesifikasiText,
     spesifikasi: extractSpec(spesifikasiText),
-    m1VsLama: row.m1_vs_lama ? normalizeSpace(row.m1_vs_lama) : "",
     gambar: images.length > 0 ? images : [productPlaceholder(nama)],
     isActive: row.is_active,
     updatedAt: row.updated_at,

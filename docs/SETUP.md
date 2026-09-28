@@ -1,4 +1,4 @@
-# Panduan Setup — NOTEBOOK // ARCHIVE
+# Panduan Setup — KALOPSIA TECH
 
 Dokumen ini menjelaskan cara menjalankan proyek dari nol: membuat database Supabase,
 menjalankan migrasi SQL, membuat user admin pertama, menyiapkan Cloudinary, mengisi
@@ -182,11 +182,11 @@ Script akan:
 
 1. Membaca **hanya** sheet `LAPTOP`. Sheet lain (TELCO, PC HOM ELE, SOF COM SUP, dst.) diabaikan.
 2. Membaca header baris pertama: `KODEBARANG, SPESIFIKASI, NOTES, SRP, M1, M1 vs LAMA`.
-   **Kolom `M1` diabaikan total** — tidak disimpan dan tidak ditampilkan di mana pun.
+   **Kolom `M1` dan `M1 vs LAMA` diabaikan total** — tidak disimpan dan tidak ditampilkan
+   di mana pun.
 3. Memvalidasi tiap baris dengan zod. Baris tidak valid dilaporkan (nomor baris + alasan)
    tanpa menggagalkan seluruh impor.
-4. Membuat snapshot `data/products.json`.
-5. Menghitung diff terhadap isi database, lalu upsert ke Supabase (batch 500 baris)
+4. Menghitung diff terhadap isi database, lalu upsert ke Supabase (batch 500 baris)
    dan menulis satu baris ke `import_logs`.
 
 Opsi:
@@ -194,9 +194,6 @@ Opsi:
 ```bash
 # file lain / folder lain
 npm run db:seed -- "D:/katalog/PL_OKT.xlsx"
-
-# hanya perbarui data/products.json, tanpa menyentuh Supabase
-npm run db:seed -- --snapshot-only
 
 # perlakukan produk yang hilang dari file sebagai "biarkan" (default: nonaktifkan)
 npm run db:seed -- --missing=keep
@@ -223,12 +220,6 @@ tidak ikut dipindahkan otomatis (`image_urls` hasil seed adalah `[]`). Dua cara 
 
 Kalau kamu punya ekspor lama `kode_barang -> URL`, ubah menjadi format CSV di atas
 dan impor sekali jalan lewat `/admin/gambar`.
-
-### Fallback tanpa Supabase
-
-Jika env Supabase belum diisi, storefront tetap jalan memakai snapshot `data/products.json`
-(hasil langkah `--snapshot-only`). Ini hanya untuk development — setelah Supabase aktif,
-data selalu dibaca dari database.
 
 ---
 
@@ -272,7 +263,7 @@ server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/lo
 4. Tarik file `.xlsx` ke area upload (maks. 10 MB), klik **Periksa & lihat diff**.
 5. Baca ringkasan diff sebelum menyimpan:
    - **Baru** — kode yang belum ada di database.
-   - **Berubah** — nilai lama → baru untuk spesifikasi / notes / SRP / M1 vs LAMA.
+   - **Berubah** — nilai lama → baru untuk spesifikasi / notes / SRP.
    - **Tidak ada di file** — produk lama yang hilang dari Excel. Pilih salah satu:
      - *Nonaktifkan* (default, soft delete — hilang dari toko tapi data & gambar tetap ada)
      - *Biarkan aktif*
@@ -283,8 +274,8 @@ server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/lo
 7. Cek `/admin/products` dan halaman toko untuk memastikan hasilnya.
 
 **Penting:** impor Excel **tidak pernah** menyentuh kolom `image_urls`. Gambar yang sudah
-diunggah lewat admin tetap utuh walaupun produknya diperbarui dari Excel. Kolom `M1` juga
-tidak pernah disimpan.
+diunggah lewat admin tetap utuh walaupun produknya diperbarui dari Excel. Kolom `M1` dan
+`M1 vs LAMA` juga tidak pernah disimpan.
 
 **Idempoten:** mengimpor file yang sama dua kali menghasilkan **0 perubahan**.
 

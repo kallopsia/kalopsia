@@ -38,7 +38,7 @@ export default function AdminNav() {
       <div className="max-w-[1280px] mx-auto px-[16px] md:px-[32px] py-[12px] flex flex-wrap items-center justify-between gap-[12px]">
         <div className="flex items-baseline gap-[8px]">
           <Link href="/admin" className="text-[14px] text-[#FFFFFF] hover-underline-anim">
-            notebook archive
+            KALOPSIA TECH
           </Link>
           <span className="text-[11px] uppercase tracking-[0.08em] text-[#767676]">/ admin</span>
         </div>

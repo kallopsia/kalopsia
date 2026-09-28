@@ -5,7 +5,7 @@ import ProductForm from "@/components/admin/ProductForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Tambah Produk — NOTEBOOK // ARCHIVE" };
+export const metadata = { title: "Admin // Tambah Produk — KALOPSIA TECH" };
 
 export default async function NewProductPage() {
   await requireAdmin();

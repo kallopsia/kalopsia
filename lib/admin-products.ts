@@ -107,7 +107,6 @@ export async function createProduct(input: ProductInput): Promise<ProductRow> {
       spesifikasi: input.spesifikasi,
       notes: input.notes || null,
       srp: input.srp,
-      m1_vs_lama: input.m1_vs_lama || null,
       image_urls: input.image_urls,
       is_active: input.is_active,
     })
@@ -125,7 +124,6 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
       spesifikasi: input.spesifikasi,
       notes: input.notes || null,
       srp: input.srp,
-      m1_vs_lama: input.m1_vs_lama || null,
       image_urls: input.image_urls,
       is_active: input.is_active,
     })

@@ -5,7 +5,7 @@ import { badgeClass, cardClass, primaryButtonClass, secondaryButtonClass } from 
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Ringkasan — NOTEBOOK // ARCHIVE" };
+export const metadata = { title: "Admin // Ringkasan — KALOPSIA TECH" };
 
 function formatDate(value: string): string {
   const date = new Date(value);
