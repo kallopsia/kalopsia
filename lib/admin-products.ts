@@ -109,6 +109,7 @@ export async function createProduct(input: ProductInput): Promise<ProductRow> {
       srp: input.srp,
       image_urls: input.image_urls,
       is_active: input.is_active,
+      is_featured: input.is_featured,
     })
     .select()
     .single();
@@ -126,6 +127,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
       srp: input.srp,
       image_urls: input.image_urls,
       is_active: input.is_active,
+      is_featured: input.is_featured,
     })
     .eq("id", id)
     .select()

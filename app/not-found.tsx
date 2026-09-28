@@ -15,7 +15,7 @@ export default function NotFound() {
             Produk atau halaman yang Anda cari mungkin telah diarsipkan atau dipindahkan ke inventaris lain.
           </p>
           <Link
-            href="/"
+            href="/shop"
             className="inline-block px-[24px] py-[12px] bg-[#0F0E12] text-[#E5E5E5] text-[11px] uppercase tracking-[0.08em] border border-[#0F0E12]"
           >
             KEMBALI KE KATALOG UTAMA

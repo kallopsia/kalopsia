@@ -60,7 +60,7 @@ export default function CatalogToolbar({
       </form>
 
       <div className="mt-[12px] flex flex-wrap items-center gap-x-[16px] gap-y-[4px] text-[11px] uppercase tracking-[0.08em]">
-        <Link href="/" className="hover-underline-anim text-[#0071BB]">
+        <Link href="/shop" className="hover-underline-anim text-[#0071BB]">
           semua laptop
         </Link>
         <Link href="/katalog/gaming" className="text-[#767676] hover:text-[#0F0E12] transition-colors">

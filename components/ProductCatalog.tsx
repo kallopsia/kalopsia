@@ -14,7 +14,7 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
     return (
       <div className="w-full border border-[#D6D6D6] bg-[#FFFFFF] p-[24px] md:p-[40px] text-[14px] leading-[1.6] text-[#767676]">
         Tidak ada produk yang cocok.
-        <Link href="/" className="ml-[8px] text-[#0071BB] hover-underline-anim">
+        <Link href="/shop" className="ml-[8px] text-[#0071BB] hover-underline-anim">
           lihat semua laptop
         </Link>
       </div>

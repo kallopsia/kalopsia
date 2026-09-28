@@ -60,11 +60,19 @@ npm run start
 │   │   └── wa/                 # Pembuat link WhatsApp (nomor penjual tersembunyi di server)
 │   ├── katalog/[kategori]/     # Katalog per kategori (gaming / ultrabook / produktivitas)
 │   ├── product/[slug]/         # Detail produk
+│   ├── shop/                   # Katalog lengkap: search, filter brand, tab, pagination
+│   ├── contact/, terms/        # Halaman tujuan link footer
 │   ├── cek-stok, spesifikasi, cara-pesan, garansi, promo
+│   ├── page.tsx                # Landing page: 8 produk is_featured, pola grid 3-1-3-1
 │   └── layout.tsx              # Root layout, JetBrains Mono, Header & Footer
 ├── components/
 │   ├── admin/                  # Komponen area admin (form, impor, gambar, toast)
-│   ├── Header.tsx, Footer.tsx, ProductCatalog.tsx, ProductGallery.tsx, dll.
+│   ├── Header.tsx              # Desktop: bar hitam -> hover expand; mobile: hamburger + panel
+│   ├── Footer.tsx              # contact / terms / copyright saja
+│   ├── LandingShowcase.tsx     # Grid landing foto-saja (trio + kartu lebar 21:9)
+│   ├── ExploreAllButton.tsx    # Tombol landing -> /shop (client-side + scroll smooth)
+│   ├── RouteFade.tsx           # Fade 300ms setiap ganti route
+│   └── ProductCatalog.tsx, ProductGallery.tsx, dll.
 ├── lib/
 │   ├── supabase/               # Klien read (anon, cache tag) & service role (server-only)
 │   ├── xlsx-parser.ts          # Parser sheet LAPTOP (dipakai seed & impor admin)
@@ -91,5 +99,10 @@ npm run start
   Nomor WhatsApp hanya ada di server via `/api/wa`.
 - **Gambar Cloudinary**: unggah lewat form admin (unsigned preset atau signed upload)
   atau tempel URL `https://res.cloudinary.com/<CLOUD_NAME>/...`; gambar pertama = utama.
+- **Landing page**: `/` menampilkan maksimal 8 produk ber-`is_featured = true` (kartu
+  foto saja, pola 3-1-3-1) plus tombol "EXPLORE ALL PRODUCTS" ke `/shop`. Produk unggulan
+  dipilih dari admin (checkbox "Tampilkan di landing page"); selama belum ada yang
+  dicentang, 8 produk aktif pertama yang dipakai. Katalog lengkap ada di `/shop`.
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
-  hosting, lalu deploy seperti proyek Next.js biasa.
+  hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di
+  `supabase/migrations/` sebelum/sesudah deploy (menambah kolom aman bagi kode lama).

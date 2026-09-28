@@ -52,6 +52,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           notes: product.notes,
           srp: Number(product.srp) || 0,
           is_active: product.is_active,
+          is_featured: product.is_featured === true,
           image_urls: product.image_urls || [],
         }}
       />

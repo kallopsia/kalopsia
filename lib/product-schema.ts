@@ -41,6 +41,7 @@ export const productInputSchema = z.object({
     .int("SRP harus bilangan bulat (satuan ribu rupiah)")
     .min(0, "SRP tidak boleh negatif"),
   is_active: z.boolean(),
+  is_featured: z.boolean(),
   image_urls: imageUrlsSchema,
 });
 

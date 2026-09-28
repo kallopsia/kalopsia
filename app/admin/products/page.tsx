@@ -247,6 +247,9 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
                       <span className={badgeClass(row.is_active ? "green" : "grey")}>
                         {row.is_active ? "aktif" : "nonaktif"}
                       </span>
+                      {row.is_featured === true && (
+                        <span className={`${badgeClass("blue")} ml-[6px]`}>landing</span>
+                      )}
                     </td>
                     <td className={`${tableCellClass} text-right`}>
                       <ProductRowActions

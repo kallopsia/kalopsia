@@ -39,7 +39,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       <div className="w-full bg-[#FFFFFF] border-b border-[#D6D6D6]">
         <div className="max-w-[1040px] mx-auto px-[16px] md:px-[64px] min-h-[48px] py-[8px] flex flex-wrap items-center justify-between gap-x-[16px] gap-y-[4px] text-[11px] uppercase tracking-[0.08em] text-[#767676]">
           <div className="flex items-center gap-[8px] min-w-0">
-            <Link href="/" className="hover-underline-anim text-[#0F0E12] flex-shrink-0">
+            <Link href="/shop" className="hover-underline-anim text-[#0F0E12] flex-shrink-0">
               KATALOG
             </Link>
             <span className="hidden sm:inline">/</span>
@@ -50,7 +50,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             </span>
           </div>
           <span className="hidden sm:inline-block">
-            <Link href="/" className="hover-underline-anim text-[#0F0E12]">
+            <Link href="/shop" className="hover-underline-anim text-[#0F0E12]">
               KEMBALI KE LISTING
             </Link>
           </span>

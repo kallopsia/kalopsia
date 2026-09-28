@@ -43,6 +43,19 @@ export const getProducts = cache(async (): Promise<Product[]> => {
   return state.rows.map(toProduct);
 });
 
+// Produk unggulan untuk landing page: baris dengan is_featured=true, urut kode
+// barang, maksimal 8. Selama admin belum menandai satupun produk, delapan
+// produk aktif pertama dipakai supaya landing tidak kosong melompong.
+export const LANDING_SHOWCASE_SIZE = 8;
+
+export const getFeaturedProducts = cache(async (): Promise<Product[]> => {
+  const state = await getCatalogState();
+  const featured = state.rows.filter((row) => row.is_featured === true);
+  const source =
+    featured.length > 0 ? featured : state.rows.slice(0, LANDING_SHOWCASE_SIZE);
+  return source.slice(0, LANDING_SHOWCASE_SIZE).map(toProduct);
+});
+
 export async function getCatalogStatus(): Promise<CatalogStatus> {
   const state = await getCatalogState();
   return state.status;

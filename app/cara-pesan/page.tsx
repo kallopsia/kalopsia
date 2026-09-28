@@ -52,7 +52,7 @@ export default function CaraPesanPage() {
         >
           chat whatsapp
         </a>
-        <Link href="/" className="text-[11px] uppercase tracking-[0.08em] text-[#0F0E12] hover-underline-anim">
+        <Link href="/shop" className="text-[11px] uppercase tracking-[0.08em] text-[#0F0E12] hover-underline-anim">
           lihat semua laptop
         </Link>
       </div>

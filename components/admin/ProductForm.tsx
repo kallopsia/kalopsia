@@ -19,6 +19,7 @@ export type ProductFormInitial = {
   notes: string | null;
   srp: number;
   is_active: boolean;
+  is_featured: boolean;
   image_urls: string[];
 };
 
@@ -38,6 +39,7 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [srp, setSrp] = useState<string>(String(initial?.srp ?? 0));
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
+  const [isFeatured, setIsFeatured] = useState(initial?.is_featured ?? false);
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.image_urls ?? []);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -56,6 +58,7 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
       notes: notes.trim() || null,
       srp: srpNumber,
       is_active: isActive,
+      is_featured: isFeatured,
       image_urls: imageUrls,
     };
 
@@ -165,6 +168,15 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
           onChange={(event) => setIsActive(event.target.checked)}
         />
         Aktif di toko (is_active)
+      </label>
+
+      <label className="flex items-center gap-[8px] text-[13px] text-[#0F0E12] mb-[24px]">
+        <input
+          type="checkbox"
+          checked={isFeatured}
+          onChange={(event) => setIsFeatured(event.target.checked)}
+        />
+        Tampilkan di landing page (is_featured, maksimal 8 produk pertama yang dicentang)
       </label>
 
       {formError && (
