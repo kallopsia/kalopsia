@@ -1,0 +1,77 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+import ProductCatalog from "@/components/ProductCatalog";
+import CatalogPagination from "@/components/CatalogPagination";
+import { getProducts, collectKategori, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
+
+interface KategoriPageProps {
+  params: {
+    kategori: string;
+  };
+  searchParams: { page?: string };
+}
+
+export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
+
+const PER_PAGE = 24;
+
+export async function generateStaticParams() {
+  const products = await getProducts();
+  return collectKategori(products).map((kategori) => ({ kategori }));
+}
+
+export async function generateMetadata({ params }: KategoriPageProps): Promise<Metadata> {
+  return {
+    title: `Katalog ${params.kategori} — NOTEBOOK // ARCHIVE`,
+    description: `Semua unit laptop kategori ${params.kategori} pada inventaris notebook archive.`,
+  };
+}
+
+export default async function KategoriPage({ params, searchParams }: KategoriPageProps) {
+  const products = await getProducts();
+  const kategori = params.kategori.toLowerCase();
+  const filtered = products.filter((product) => product.kategori.includes(kategori));
+  const allKategori = collectKategori(products);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const page = Math.min(Math.max(1, Number(searchParams.page) || 1), totalPages);
+  const pageItems = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  return (
+    <div className="w-full flex-1 bg-[#FFFFFF] md:bg-[#F5F5F5]">
+      <section className="max-w-[1280px] mx-auto px-[16px] md:px-[32px] pt-[24px] md:pt-[40px] pb-[16px] md:pb-[24px]">
+        <div className="text-[11px] uppercase tracking-[0.08em] text-[#767676] mb-[4px]">
+          KATALOG // KATEGORI
+        </div>
+        <h1 className="text-[24px] md:text-[32px] font-light leading-tight text-[#0F0E12] tracking-tight">
+          {kategori}
+        </h1>
+        <div className="mt-[12px] flex flex-wrap items-center gap-x-[16px] gap-y-[4px] text-[11px] uppercase tracking-[0.08em]">
+          <Link href="/" className="hover-underline-anim text-[#0071BB]">
+            semua laptop
+          </Link>
+          {allKategori.map((item) => (
+            <Link
+              key={item}
+              href={`/katalog/${item}`}
+              className={
+                item === kategori
+                  ? "text-[#0F0E12]"
+                  : "text-[#767676] hover:text-[#0F0E12] transition-colors"
+              }
+            >
+              {item}
+            </Link>
+          ))}
+          <span className="text-[#767676]">{filtered.length} unit</span>
+        </div>
+      </section>
+
+      <section className="w-full px-[16px] pb-[24px] md:px-0 md:pb-0">
+        <ProductCatalog products={pageItems} />
+      </section>
+
+      <CatalogPagination page={page} totalPages={totalPages} basePath={`/katalog/${kategori}`} />
+    </div>
+  );
+}

@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Strict enforcement: 0px border-radius and NO drop shadow everywhere */
+*,
+*::before,
+*::after {
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background-color: #F5F5F5;
+  color: #0F0E12;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #F5F5F5;
+  color: #0F0E12;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Enforce max font-weight 400 across all elements (never bold / 600+) */
+h1, h2, h3, h4, h5, h6, strong, b, th {
+  font-weight: 400;
+}
+
+/* Tabular nums for all specification data and prices */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus state: outline 1px solid blue accent (#0071BB), offset 2px */
+*:focus-visible {
+  outline: 1px solid #0071BB !important;
+  outline-offset: 2px !important;
+}
+
+/* Micro-interaction: Text link hover underline left to right, 200ms */
+.hover-underline-anim {
+  position: relative;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.hover-underline-anim::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background-color: currentColor;
+  transform-origin: bottom left;
+  transition: transform 200ms ease-out;
+}
+
+.hover-underline-anim:hover::after,
+.hover-underline-anim:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Product catalog card: rounded on mobile, square hairline cell on desktop */
+.product-card {
+  border-radius: 10px !important;
+}
+
+@media (min-width: 768px) {
+  .product-card {
+    border-radius: 0px !important;
+  }
+}
+
+/* Micro-interaction: Product card image hover opacity 0.85, 150ms ease-out */
+.product-card-image {
+  transition: opacity 150ms ease-out;
+}
+
+.product-card-cell:hover .product-card-image {
+  opacity: 0.85;
+}
+
+/* Micro-interaction: Buy button WhatsApp hover = invert background (light <-> dark) */
+.btn-wa {
+  background-color: #0071BB;
+  color: #FFFFFF;
+  border: 1px solid #0071BB;
+  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.btn-wa:hover {
+  background-color: #0F0E12;
+  color: #FFFFFF;
+  border-color: #0F0E12;
+}
+
+/* Accordion icon transition: "+" rotates 45 deg to "x" */
+.accordion-icon {
+  display: inline-block;
+  transition: transform 250ms ease-in-out;
+  transform-origin: center;
+}
+
+.accordion-icon.open {
+  transform: rotate(45deg);
+}
+
+/* Accordion body height transition (grid-rows: adapts to content, never clipped) */
+.accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 250ms ease-in-out, opacity 250ms ease-in-out;
+}
+
+.accordion-content > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.accordion-content.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* Gallery crossfade: 300ms transition between images */
+.gallery-crossfade {
+  transition: opacity 300ms ease-in-out;
+}
+
+/* Custom Checkbox (0px radius, strictly 1px hairline border, accent check) */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #767676;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  margin: 0;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #0071BB;
+  border-color: #0071BB;
+}
+
+input[type="checkbox"]:checked::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background-color: #FFFFFF;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: 1px solid #0071BB !important;
+  outline-offset: 2px !important;
+}

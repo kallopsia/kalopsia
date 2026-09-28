@@ -1,0 +1,48 @@
+// Baris persis seperti yang disimpan di tabel Supabase `products`.
+export type ProductRow = {
+  id: string;
+  kode_barang: string;
+  spesifikasi: string;
+  notes: string | null;
+  srp: number;
+  m1_vs_lama: string | null;
+  image_urls: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProductInsert = Pick<
+  ProductRow,
+  "kode_barang" | "spesifikasi" | "notes" | "srp" | "m1_vs_lama" | "image_urls" | "is_active"
+>;
+
+export type SpecRingkas = {
+  prosesor?: string;
+  memori?: string;
+  penyimpanan?: string;
+  grafis?: string;
+  layar?: string;
+  sistemOperasi?: string;
+};
+
+// Model tampilan untuk storefront. Diturunkan dari ProductRow saat query,
+// brand/kategori/slug tidak disimpan di database.
+export type Product = {
+  id: string;
+  slug: string;
+  kodeBarang: string;
+  nama: string;
+  brand: string;
+  kategori: string[];
+  srp: number;
+  harga: number;
+  hargaTersedia: boolean;
+  catatan: string;
+  spesifikasiText: string;
+  spesifikasi: SpecRingkas;
+  m1VsLama: string;
+  gambar: string[];
+  isActive: boolean;
+  updatedAt: string;
+};
