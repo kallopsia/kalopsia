@@ -46,39 +46,3 @@ export const productInputSchema = z.object({
 });
 
 export type ProductInput = z.infer<typeof productInputSchema>;
-
-// Baris CSV untuk impor massal gambar: kode_barang,image_url
-export const bulkImageLineSchema = z.object({
-  kode_barang: z.string().trim().min(1, "Kode barang kosong"),
-  image_url: cloudinaryUrlSchema(),
-});
-
-export function parseBulkImageCsv(text: string): {
-  entries: { kode_barang: string; image_url: string }[];
-  errors: { line: number; message: string }[];
-} {
-  const entries: { kode_barang: string; image_url: string }[] = [];
-  const errors: { line: number; message: string }[] = [];
-
-  text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .forEach((line, index) => {
-      const lineNumber = index + 1;
-      if (!line) return;
-      if (lineNumber === 1 && /kode/i.test(line) && /image|url/i.test(line)) return;
-
-      const [kode, url] = line.split(",").map((part) => part.trim());
-      const parsed = bulkImageLineSchema.safeParse({ kode_barang: kode || "", image_url: url || "" });
-      if (!parsed.success) {
-        errors.push({
-          line: lineNumber,
-          message: parsed.error.issues.map((issue) => issue.message).join("; "),
-        });
-        return;
-      }
-      entries.push(parsed.data);
-    });
-
-  return { entries, errors };
-}

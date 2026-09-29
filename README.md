@@ -52,13 +52,15 @@ npm run start
 
 ```text
 ├── app/
-│   ├── admin/                  # Area admin: login, ringkasan, produk, impor Excel, gambar massal
+│   ├── admin/                  # Area admin: login, ringkasan, produk, layanan, sparepart, impor Excel
 │   ├── api/
-│   │   ├── admin/              # API admin (produk, impor, gambar) — service role hanya di server
+│   │   ├── admin/              # API admin (produk, software, sparepart, layanan, impor) — service role hanya di server
 │   │   ├── auth/               # Login/logout Supabase Auth (@supabase/ssr)
 │   │   ├── cloudinary/sign/    # Tanda tangan signed upload (API secret tidak pernah ke client)
 │   │   └── wa/                 # Pembuat link WhatsApp (nomor penjual tersembunyi di server)
 │   ├── katalog/[kategori]/     # Katalog per kategori (gaming / ultrabook / produktivitas)
+│   ├── lainnya/                # Jasa: install-ulang-windows, install-software, sparepart
+│   ├── info/cod/               # Info layanan COD + FAQ
 │   ├── product/[slug]/         # Detail produk
 │   ├── shop/                   # Katalog lengkap: search, filter brand, tab, pagination
 │   ├── contact/, terms/        # Halaman tujuan link footer
@@ -66,22 +68,27 @@ npm run start
 │   ├── page.tsx                # Landing page: 8 produk is_featured, pola grid 3-1-3-1
 │   └── layout.tsx              # Root layout, JetBrains Mono, Header & Footer
 ├── components/
-│   ├── admin/                  # Komponen area admin (form, impor, gambar, toast)
+│   ├── admin/                  # Komponen area admin (form produk/software/sparepart, impor, gambar, toast)
 │   ├── Header.tsx              # Desktop: bar hitam -> hover expand; mobile: hamburger + panel
 │   ├── Footer.tsx              # contact / terms / copyright saja
 │   ├── LandingShowcase.tsx     # Grid landing foto-saja (trio + kartu lebar 21:9)
 │   ├── ExploreAllButton.tsx    # Tombol landing -> /shop (client-side + scroll smooth)
 │   ├── RouteFade.tsx           # Fade 300ms setiap ganti route
+│   ├── ServiceCatalog.tsx      # Grid kartu jasa/sparepart (pola sama dengan grid laptop)
+│   ├── FaqAccordion.tsx        # Akordeon FAQ (satu terbuka pada satu waktu)
 │   └── ProductCatalog.tsx, ProductGallery.tsx, dll.
 ├── lib/
 │   ├── supabase/               # Klien read (anon, cache tag) & service role (server-only)
 │   ├── xlsx-parser.ts          # Parser sheet LAPTOP (dipakai seed & impor admin)
 │   ├── import.ts               # Diff + upsert batch + log impor
 │   ├── products.ts             # Query katalog + status koneksi database
+│   ├── services.ts             # Query publik jasa & sparepart
+│   ├── admin-products.ts, admin-services.ts  # CRUD sisi server (service role)
 │   ├── product-view.ts         # Slug/brand/kategori/ringkasan spek (diturunkan saat baca)
-│   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, teks "harga belum tersedia"
+│   ├── slug.ts, service-schema.ts, product-schema.ts  # Validasi zod + slug URL
+│   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, harga jasa (rupiah penuh)
 ├── scripts/seed-from-xlsx.ts   # npm run db:seed
-├── supabase/migrations/        # Skema products + import_logs, RLS, index, trigger
+├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install + RLS
 └── docs/SETUP.md               # Panduan setup & alur kerja bulanan
 ```
 
@@ -103,6 +110,15 @@ npm run start
   foto saja, pola 3-1-3-1) plus tombol "EXPLORE ALL PRODUCTS" ke `/shop`. Produk unggulan
   dipilih dari admin (checkbox "Tampilkan di landing page"); selama belum ada yang
   dicentang, 8 produk aktif pertama yang dipakai. Katalog lengkap ada di `/shop`.
+- **Layanan & sparepart**: tabel `services_windows_install` (satu baris biaya jasa install
+  ulang Windows), `software_services`, dan `spareparts` — semuanya diisi dari admin
+  (`/admin/install-ulang`, `/admin/software`, `/admin/sparepart`). Harga pada tabel-tabel
+  ini **rupiah penuh** (150000 = Rp 150.000), berbeda dengan `products.srp` yang dalam
+  satuan ribu. Halaman publiknya: `/lainnya/install-ulang-windows`,
+  `/lainnya/install-software[/<slug>]`, `/lainnya/sparepart[/<slug>]`.
+- **Tombol WhatsApp**: semua tombol ("Pesan Sekarang", "Chat Admin", "Beli via WhatsApp")
+  menunjuk ke `/api/wa` dengan parameter (`slug`, `software`, `sparepart`, atau `pesan=<kunci>`).
+  Nomor dan isi pesan dirakit di server; kunci `pesan` dibatasi whitelist.
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
   hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di
-  `supabase/migrations/` sebelum/sesudah deploy (menambah kolom aman bagi kode lama).
+  `supabase/migrations/` sebelum/sesudah deploy (menambah kolom/tabel aman bagi kode lama).

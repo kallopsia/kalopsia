@@ -78,9 +78,6 @@ export default async function AdminDashboardPage() {
         <Link href="/admin/products/new" className={secondaryButtonClass}>
           tambah produk
         </Link>
-        <Link href="/admin/gambar" className={secondaryButtonClass}>
-          gambar massal (csv)
-        </Link>
       </div>
 
       <section>

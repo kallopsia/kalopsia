@@ -8,8 +8,10 @@ import { useToast } from "./Toast";
 const NAV_ITEMS = [
   { href: "/admin", label: "ringkasan" },
   { href: "/admin/products", label: "produk" },
+  { href: "/admin/install-ulang", label: "install ulang" },
+  { href: "/admin/software", label: "software" },
+  { href: "/admin/sparepart", label: "sparepart" },
   { href: "/admin/import", label: "impor excel" },
-  { href: "/admin/gambar", label: "gambar massal" },
 ];
 
 export default function AdminNav() {

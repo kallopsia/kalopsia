@@ -201,39 +201,3 @@ export async function getRecentImportLogs(limit = 10): Promise<ImportLogRow[]> {
   if (error) throw new Error(error.message);
   return (data || []) as ImportLogRow[];
 }
-
-export async function bulkSetImages(
-  entries: { kode_barang: string; image_url: string }[]
-): Promise<{ updated: number; missing: string[] }> {
-  const supabase = getSupabaseServiceClient();
-  const kodes = Array.from(new Set(entries.map((entry) => entry.kode_barang)));
-  const { data: existing, error } = await supabase
-    .from("products")
-    .select("id,kode_barang,image_urls")
-    .in("kode_barang", kodes);
-  if (error) throw new Error(error.message);
-
-  const rowsByKode = new Map<string, { id: string; image_urls: string[] }>();
-  ((existing || []) as { id: string; kode_barang: string; image_urls: string[] }[]).forEach((row) =>
-    rowsByKode.set(row.kode_barang, { id: row.id, image_urls: row.image_urls || [] })
-  );
-
-  const missing = kodes.filter((kode) => !rowsByKode.has(kode));
-  let updated = 0;
-
-  for (const entry of entries) {
-    const row = rowsByKode.get(entry.kode_barang);
-    if (!row) continue;
-    if (row.image_urls.includes(entry.image_url)) continue;
-    const nextUrls = [...row.image_urls, entry.image_url];
-    const { error: updateError } = await supabase
-      .from("products")
-      .update({ image_urls: nextUrls })
-      .eq("id", row.id);
-    if (updateError) throw new Error(updateError.message);
-    row.image_urls = nextUrls;
-    updated += 1;
-  }
-
-  return { updated, missing };
-}

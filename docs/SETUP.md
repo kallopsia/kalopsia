@@ -38,7 +38,16 @@ npm install
 
 ## 2. Menjalankan migrasi SQL
 
-Migrasi ada di `supabase/migrations/20260928000000_init.sql`. Isinya:
+Jalankan semua file di `supabase/migrations/` **berurutan** (nama file = urutan waktu):
+
+| File | Isi |
+| --- | --- |
+| `20260928000000_init.sql` | Skema awal: ekstensi, `is_admin()`, `products`, `import_logs`, index, trigger, RLS |
+| `20260929000000_drop_m1_vs_lama.sql` | Buang kolom `m1_vs_lama` yang tidak dipakai |
+| `20260930000000_add_is_featured.sql` | Kolom `is_featured` untuk produk unggulan di landing page |
+| `20261001000000_add_services_and_spareparts.sql` | Tabel `services_windows_install`, `software_services`, `spareparts` + RLS |
+
+Isi `20260928000000_init.sql`:
 
 - ekstensi `pgcrypto` (untuk `gen_random_uuid()`) dan `pg_trgm` (pencarian teks fuzzy)
 - fungsi `public.is_admin()` — membaca `auth.jwt() -> 'app_metadata' ->> 'role'`
@@ -52,6 +61,7 @@ Migrasi ada di `supabase/migrations/20260928000000_init.sql`. Isinya:
 1. Dashboard Supabase → **SQL Editor** → **New query**.
 2. Salin seluruh isi `supabase/migrations/20260928000000_init.sql`.
 3. Klik **Run**. Pastikan output `Success. No rows returned`.
+4. Ulangi untuk tiga file migrasi berikutnya, berurutan.
 
 ### Cara B — lewat Supabase CLI
 
@@ -204,22 +214,11 @@ npm run db:seed -- --missing=keep
 ### Memetakan URL gambar lama dari Google Spreadsheet
 
 Spreadsheet lama menyimpan URL gambar, tetapi banyak di antaranya sudah 404, sehingga
-tidak ikut dipindahkan otomatis (`image_urls` hasil seed adalah `[]`). Dua cara mengisinya:
+tidak ikut dipindahkan otomatis (`image_urls` hasil seed adalah `[]`). Gambar diisi lewat
+admin: `/admin/products` → **Ubah** → bagian *Gambar produk* → unggah file atau tempel URL
+Cloudinary, lalu atur urutan (gambar pertama = gambar utama).
 
-1. **Lewat admin (disarankan)** — `/admin/products` → **Ubah** → bagian *Gambar produk* →
-   unggah file atau tempel URL Cloudinary, lalu atur urutan (gambar pertama = gambar utama).
-2. **Lewat CSV massal** — `/admin/gambar`. Tempel CSV dengan format:
-
-   ```csv
-   kode_barang,image_url
-   PR-LAP-AC-A715-59G-516S,https://res.cloudinary.com/namacloud/image/upload/v1/notebook-archive/ac-a715.jpg
-   PR-LAP-LE-LOQ-15IRX9,https://res.cloudinary.com/namacloud/image/upload/v1/notebook-archive/le-loq.jpg
-   ```
-
-   Satu kode boleh punya banyak baris; URL baru ditambahkan tanpa menghapus URL lama.
-
-Kalau kamu punya ekspor lama `kode_barang -> URL`, ubah menjadi format CSV di atas
-dan impor sekali jalan lewat `/admin/gambar`.
+Impor Excel tidak pernah menyentuh `image_urls`; gambar hanya dikelola dari admin.
 
 ---
 
@@ -240,15 +239,21 @@ Halaman penting:
 
 | URL | Isi |
 | --- | --- |
-| `/` | Katalog utama + pencarian + pagination |
+| `/` | Landing page: 8 produk unggulan (`is_featured`) + tombol ke katalog |
+| `/shop` | Katalog utama + pencarian + pagination |
 | `/katalog/gaming` `/katalog/ultrabook` `/katalog/produktivitas` | Katalog per kategori |
 | `/product/<slug>` | Detail produk (slug diturunkan dari `KODEBARANG`) |
-| `/cek-stok`, `/spesifikasi`, `/promo`, `/cara-pesan`, `/garansi` | Halaman info |
+| `/lainnya/install-ulang-windows` | Jasa install ulang Windows (biaya dari database) |
+| `/lainnya/install-software` `/lainnya/install-software/<slug>` | Jasa install software + detail |
+| `/lainnya/sparepart` `/lainnya/sparepart/<slug>` | Sparepart + detail |
+| `/cek-stok`, `/info/cod`, `/cara-pesan`, `/spesifikasi`, `/promo`, `/garansi` | Halaman info |
 | `/admin/login` | Login admin (email + password Supabase Auth) |
 | `/admin` | Ringkasan: jumlah produk, statistik, riwayat impor |
 | `/admin/import` | Unggah Excel → preview diff → terapkan |
 | `/admin/products` | Tabel produk: cari, filter, sortir, ubah, aktif/nonaktif, hapus |
-| `/admin/gambar` | Isi `image_urls` massal lewat CSV |
+| `/admin/install-ulang` | Ubah biaya & deskripsi jasa install ulang Windows |
+| `/admin/software` | CRUD jasa install software (gambar via Cloudinary) |
+| `/admin/sparepart` | CRUD sparepart (gambar via Cloudinary) |
 
 Semua route `/admin/*` dijaga `middleware.ts` (cek sesi cookie) **dan** dicek ulang di
 server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/login`.

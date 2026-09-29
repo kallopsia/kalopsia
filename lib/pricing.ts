@@ -22,3 +22,9 @@ export function formatSrp(srp: number): string {
 export function hasPrice(srp: number): boolean {
   return Number(srp) > 0;
 }
+
+// Harga jasa & sparepart sudah dalam rupiah penuh (bukan satuan ribu seperti SRP).
+export function formatServicePrice(harga: number): string {
+  if (!harga || Number(harga) <= 0) return HARGA_BELUM_TERSEDIA;
+  return formatRupiah(harga);
+}

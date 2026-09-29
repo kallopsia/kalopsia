@@ -7,7 +7,7 @@ interface NavColumn {
   title: string;
   href: string;
   icon: React.ReactNode;
-  links: { label: string; href: string; accent?: boolean }[];
+  links: { label: string; href: string }[];
 }
 
 const NAV_COLUMNS: NavColumn[] = [
@@ -30,8 +30,8 @@ const NAV_COLUMNS: NavColumn[] = [
     ],
   },
   {
-    title: "beli",
-    href: "/cara-pesan",
+    title: "lainnya",
+    href: "/lainnya/install-ulang-windows",
     icon: (
       <svg width="22" height="32" viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="3" y="4" width="18" height="26" stroke="#0F0E12" strokeWidth="1.5" />
@@ -42,9 +42,9 @@ const NAV_COLUMNS: NavColumn[] = [
       </svg>
     ),
     links: [
-      { label: "cara pesan", href: "/cara-pesan" },
-      { label: "chat whatsapp", href: "/api/wa?chat=1", accent: true },
-      { label: "garansi", href: "/garansi" },
+      { label: "install ulang windows", href: "/lainnya/install-ulang-windows" },
+      { label: "install software", href: "/lainnya/install-software" },
+      { label: "sparepart", href: "/lainnya/sparepart" },
     ],
   },
   {
@@ -61,8 +61,8 @@ const NAV_COLUMNS: NavColumn[] = [
     ),
     links: [
       { label: "cek stok", href: "/cek-stok" },
-      { label: "spesifikasi", href: "/spesifikasi" },
-      { label: "promo", href: "/promo" },
+      { label: "cara pesan", href: "/cara-pesan" },
+      { label: "cod", href: "/info/cod" },
     ],
   },
 ];
@@ -97,11 +97,7 @@ function ExpandedHeader() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className={
-                          link.accent
-                            ? "text-[#0071BB]"
-                            : "hover:text-[#0F0E12] transition-colors"
-                        }
+                        className="hover:text-[#0F0E12] transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -237,11 +233,7 @@ export default function Header() {
                         <Link
                           href={link.href}
                           onClick={() => setMenuOpen(false)}
-                          className={
-                            link.accent
-                              ? "text-[#0071BB]"
-                              : "hover:text-[#0F0E12] transition-colors"
-                          }
+                          className="hover:text-[#0F0E12] transition-colors"
                         >
                           {link.label}
                         </Link>

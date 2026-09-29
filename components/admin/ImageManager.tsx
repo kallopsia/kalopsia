@@ -4,6 +4,12 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { useToast } from "./Toast";
 import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  uploadImageToCloudinary,
+  validateCloudinaryUrl,
+} from "./cloudinaryUpload";
+import {
   inputClass,
   labelClass,
   secondaryButtonClass,
@@ -25,25 +31,6 @@ interface ImageManagerProps {
 }
 
 const MAX_IMAGES = 12;
-const MAX_FILE_BYTES = 8 * 1024 * 1024;
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const UPLOAD_ENDPOINT = "https://api.cloudinary.com/v1_1";
-
-function validateCloudinaryUrl(url: string, cloudName: string): string | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return "URL tidak valid.";
-  }
-  if (parsed.protocol !== "https:" || parsed.hostname !== "res.cloudinary.com") {
-    return "URL gambar harus https://res.cloudinary.com/...";
-  }
-  if (cloudName && !parsed.pathname.startsWith(`/${cloudName}/`)) {
-    return `URL gambar harus berada di cloud "${cloudName}".`;
-  }
-  return null;
-}
 
 export default function ImageManager({ value, onChange, config }: ImageManagerProps) {
   const toast = useToast();
@@ -80,35 +67,6 @@ export default function ImageManager({ value, onChange, config }: ImageManagerPr
     }
   };
 
-  const uploadFile = async (file: File): Promise<string> => {
-    const form = new FormData();
-    form.append("file", file);
-
-    if (config.uploadPreset) {
-      form.append("upload_preset", config.uploadPreset);
-    } else {
-      const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
-      const signPayload = await signResponse.json().catch(() => ({}));
-      if (!signResponse.ok) {
-        throw new Error(signPayload?.error || "Gagal meminta signature Cloudinary.");
-      }
-      form.append("api_key", signPayload.apiKey);
-      form.append("timestamp", String(signPayload.timestamp));
-      form.append("signature", signPayload.signature);
-      form.append("folder", signPayload.folder || "notebook-archive");
-    }
-
-    const response = await fetch(`${UPLOAD_ENDPOINT}/${config.cloudName}/image/upload`, {
-      method: "POST",
-      body: form,
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload?.error?.message || "Upload ke Cloudinary gagal.");
-    }
-    return String(payload.secure_url);
-  };
-
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     if (!config.configured || !config.cloudName) {
@@ -120,11 +78,11 @@ export default function ImageManager({ value, onChange, config }: ImageManagerPr
     }
 
     const accepted = Array.from(files).filter((file) => {
-      if (!ACCEPTED_TYPES.includes(file.type)) {
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast.push(`${file.name}: format tidak didukung (jpg/png/webp/avif).`, "error");
         return false;
       }
-      if (file.size > MAX_FILE_BYTES) {
+      if (file.size > MAX_IMAGE_BYTES) {
         toast.push(`${file.name}: ukuran maksimal 8 MB.`, "error");
         return false;
       }
@@ -141,7 +99,7 @@ export default function ImageManager({ value, onChange, config }: ImageManagerPr
           toast.push(`Maksimal ${MAX_IMAGES} gambar, sisa file dilewati.`, "info");
           break;
         }
-        const url = await uploadFile(file);
+        const url = await uploadImageToCloudinary(file, config);
         if (!next.includes(url)) next.push(url);
       }
       onChange(next);
@@ -251,7 +209,7 @@ export default function ImageManager({ value, onChange, config }: ImageManagerPr
         <input
           ref={fileInputRef}
           type="file"
-          accept={ACCEPTED_TYPES.join(",")}
+          accept={ACCEPTED_IMAGE_TYPES.join(",")}
           multiple
           onChange={(event) => void handleFiles(event.target.files)}
           className="text-[12px] text-[#0F0E12] file:mr-[8px] file:border file:border-[#D6D6D6] file:bg-[#FFFFFF] file:px-[12px] file:py-[8px] file:text-[11px] file:uppercase file:tracking-[0.08em] file:text-[#0F0E12]"
