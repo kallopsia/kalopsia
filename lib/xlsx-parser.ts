@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { z } from "zod";
+import { stripKodePrefix } from "./kode-barang";
 
 export const LAPTOP_SHEET_NAME = "LAPTOP";
 
@@ -151,7 +152,10 @@ export function parseLaptopWorkbook(data: ArrayBuffer | Uint8Array): ParseResult
     dataRowCount += 1;
     const rowNumber = i + 1;
 
-    const kodeBarang = textOrNull(cell(raw, "KODEBARANG"));
+    // Prefix lama PR-LAP-<BRAND>- dibuang saat baca, supaya file price list
+    // format lama tetap tersimpan tanpa prefix. Cek duplikat memakai kode hasil strip.
+    const kodeBarangRaw = textOrNull(cell(raw, "KODEBARANG"));
+    const kodeBarang = kodeBarangRaw ? stripKodePrefix(kodeBarangRaw) : kodeBarangRaw;
     if (kodeBarang) {
       const previous = seenKode.get(kodeBarang);
       if (previous !== undefined) {

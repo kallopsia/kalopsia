@@ -16,6 +16,7 @@ export type ProductListQuery = {
   status?: "all" | "active" | "inactive";
   noImage?: boolean;
   srpZero?: boolean;
+  noName?: boolean;
   brand?: string;
   sort?: string;
   dir?: "asc" | "desc";
@@ -74,7 +75,13 @@ export async function listProducts(query: ProductListQuery = {}): Promise<Produc
   if (query.status === "inactive") request = request.eq("is_active", false);
   if (query.noImage) request = request.eq("image_urls", "{}");
   if (query.srpZero) request = request.eq("srp", 0);
-  if (query.brand) request = request.like("kode_barang", `PR-LAP-${sanitizeQuery(query.brand)}-%`);
+  if (query.noName) request = request.or(`nama_produk.is.null,nama_produk.eq.""`);
+  // Kode barang tidak lagi memuat segmen brand, jadi filter memakai kata
+  // pertama spesifikasi (tempat nama brand berada).
+  if (query.brand) {
+    const brandName = BRAND_FROM_CODE_SEGMENT[query.brand.toUpperCase()] || query.brand;
+    request = request.ilike("spesifikasi", `${sanitizeQuery(brandName)} %`);
+  }
 
   const { data, error, count } = await request
     .order(sortField, { ascending })
@@ -105,6 +112,7 @@ export async function createProduct(input: ProductInput): Promise<ProductRow> {
     .insert({
       kode_barang: input.kode_barang,
       spesifikasi: input.spesifikasi,
+      nama_produk: input.nama_produk || null,
       notes: input.notes || null,
       srp: input.srp,
       image_urls: input.image_urls,
@@ -123,6 +131,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
     .from("products")
     .update({
       spesifikasi: input.spesifikasi,
+      nama_produk: input.nama_produk || null,
       notes: input.notes || null,
       srp: input.srp,
       image_urls: input.image_urls,

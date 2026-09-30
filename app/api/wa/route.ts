@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProductBySlug } from "@/lib/products";
 import { getSoftwareBySlug, getSparepartBySlug } from "@/lib/services";
-import { formatServicePrice, formatSrp, HARGA_BELUM_TERSEDIA } from "@/lib/pricing";
+import { addonLabel } from "@/lib/addon-labels";
+import { getActiveAddons } from "@/lib/addons";
+import {
+  formatRupiah,
+  formatServicePrice,
+  formatSrp,
+  HARGA_BELUM_TERSEDIA,
+  srpToRupiah,
+} from "@/lib/pricing";
+import type { ProductAddonRow } from "@/types/addon";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +95,21 @@ export async function GET(request: NextRequest) {
     ? formatSrp(product.srp)
     : `${HARGA_BELUM_TERSEDIA} (mohon tanya harga terbaru)`;
 
-  const message = [
+  // Add-on dipilih di halaman produk (?addon=body:matte). Divalidasi ulang di
+  // server terhadap add-on aktif supaya isi chat tidak bisa disuntik dari URL.
+  const activeAddons = await getActiveAddons();
+  const selectedAddons: ProductAddonRow[] = [];
+  for (const value of searchParams.getAll("addon")) {
+    const [kategori, tipe] = value.split(":");
+    const match = activeAddons.find(
+      (addon) => addon.kategori === kategori && addon.tipe === tipe
+    );
+    if (match && !selectedAddons.some((addon) => addon.id === match.id)) {
+      selectedAddons.push(match);
+    }
+  }
+
+  const lines = [
     `Halo, saya ingin membeli laptop berikut:`,
     ``,
     `Kode Barang: ${product.kodeBarang}`,
@@ -95,9 +118,25 @@ export async function GET(request: NextRequest) {
     `Spesifikasi: ${product.spesifikasiText}`,
     `Catatan: ${product.catatan || "-"}`,
     `Harga: ${hargaText}`,
-    ``,
-    `Apakah unit ini masih tersedia? Terima kasih.`,
-  ].join("\n");
+  ];
+
+  if (selectedAddons.length > 0) {
+    lines.push(``, `Add-on:`);
+    selectedAddons.forEach((addon) => {
+      lines.push(`+ ${addonLabel(addon.kategori, addon.tipe)} — ${formatServicePrice(addon.harga)}`);
+    });
+    if (product.hargaTersedia) {
+      const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.harga, 0);
+      const unpriced = selectedAddons.some((addon) => addon.harga <= 0);
+      lines.push(
+        `Estimasi total: ${formatRupiah(srpToRupiah(product.srp) + addonTotal)}` +
+          (unpriced ? " (add-on bertanda Hubungi kami belum termasuk)" : "")
+      );
+    }
+  }
+
+  lines.push(``, `Apakah unit ini masih tersedia? Terima kasih.`);
+  const message = lines.join("\n");
 
   const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 

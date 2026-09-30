@@ -46,6 +46,8 @@ Jalankan semua file di `supabase/migrations/` **berurutan** (nama file = urutan 
 | `20260929000000_drop_m1_vs_lama.sql` | Buang kolom `m1_vs_lama` yang tidak dipakai |
 | `20260930000000_add_is_featured.sql` | Kolom `is_featured` untuk produk unggulan di landing page |
 | `20261001000000_add_services_and_spareparts.sql` | Tabel `services_windows_install`, `software_services`, `spareparts` + RLS |
+| `20261002000000_product_addons.sql` | Tabel `product_addons` (anti gores body/layar, matte/glossy) + seed 4 baris + RLS |
+| `20261003000000_add_nama_produk.sql` | Kolom `nama_produk` (judul tampilan, opsional) di `products` |
 
 Isi `20260928000000_init.sql`:
 
@@ -61,7 +63,7 @@ Isi `20260928000000_init.sql`:
 1. Dashboard Supabase → **SQL Editor** → **New query**.
 2. Salin seluruh isi `supabase/migrations/20260928000000_init.sql`.
 3. Klik **Run**. Pastikan output `Success. No rows returned`.
-4. Ulangi untuk tiga file migrasi berikutnya, berurutan.
+4. Ulangi untuk file migrasi berikutnya, berurutan.
 
 ### Cara B — lewat Supabase CLI
 
@@ -254,6 +256,7 @@ Halaman penting:
 | `/admin/install-ulang` | Ubah biaya & deskripsi jasa install ulang Windows |
 | `/admin/software` | CRUD jasa install software (gambar via Cloudinary) |
 | `/admin/sparepart` | CRUD sparepart (gambar via Cloudinary) |
+| `/admin/addons` | Ubah harga & status aktif 4 kombinasi add-on anti gores |
 
 Semua route `/admin/*` dijaga `middleware.ts` (cek sesi cookie) **dan** dicek ulang di
 server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/login`.

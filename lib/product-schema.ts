@@ -35,6 +35,7 @@ export const productInputSchema = z.object({
       "Kode barang hanya boleh huruf, angka, dan tanda - _ . /"
     ),
   spesifikasi: z.string().trim().min(3, "Spesifikasi wajib diisi"),
+  nama_produk: z.string().trim().max(200, "Nama produk terlalu panjang").nullable(),
   notes: z.string().trim().max(2000, "Notes terlalu panjang").nullable(),
   srp: z.coerce
     .number({ error: "SRP harus angka" })

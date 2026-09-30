@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getProductBySlug, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
+import { getActiveAddons } from "@/lib/addons";
 import { formatSrp } from "@/lib/pricing";
 import ProductGallery from "@/components/ProductGallery";
 import ProductPurchaseSection from "@/components/ProductPurchaseSection";
@@ -34,6 +35,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const addons = await getActiveAddons();
+
   return (
     <div className="w-full flex-1 flex flex-col">
       <div className="w-full bg-[#FFFFFF] border-b border-[#D6D6D6]">
@@ -64,7 +67,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <ProductGallery images={product.gambar} productName={product.nama} />
             </div>
             <div>
-              <ProductPurchaseSection product={product} />
+              <ProductPurchaseSection product={product} addons={addons} />
             </div>
           </div>
 

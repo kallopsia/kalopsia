@@ -20,6 +20,7 @@ interface ProductsPageProps {
     brand?: string;
     noImage?: string;
     srpZero?: string;
+    noName?: string;
     sort?: string;
     dir?: string;
   };
@@ -73,6 +74,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
     brand: searchParams.brand || "",
     noImage: searchParams.noImage === "1",
     srpZero: searchParams.srpZero === "1",
+    noName: searchParams.noName === "1",
     sort: searchParams.sort || "kode_barang",
     dir: (searchParams.dir === "desc" ? "desc" : "asc") as "asc" | "desc",
   };
@@ -138,7 +140,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
         </div>
         <div>
           <label className="block text-[11px] uppercase tracking-[0.08em] text-[#767676] mb-[4px]">
-            Brand (segmen kode)
+            Brand
           </label>
           <select name="brand" defaultValue={query.brand} className={inputClass}>
             <option value="">semua brand</option>
@@ -157,6 +159,10 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
           <label className="flex items-center gap-[8px] text-[12px] text-[#0F0E12]">
             <input type="checkbox" name="srpZero" value="1" defaultChecked={query.srpZero} />
             SRP 0 / belum ada harga
+          </label>
+          <label className="flex items-center gap-[8px] text-[12px] text-[#0F0E12]">
+            <input type="checkbox" name="noName" value="1" defaultChecked={query.noName} />
+            belum ada nama produk
           </label>
         </div>
         <div className="sm:col-span-2 lg:col-span-4 flex flex-wrap items-center gap-[12px]">
@@ -190,6 +196,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
             <tr>
               <th className={tableHeadClass}>Gambar</th>
               <SortHeader label="Kode barang" field="kode_barang" sort={query.sort} dir={query.dir} params={searchParams} />
+              <th className={tableHeadClass}>Nama produk</th>
               <SortHeader label="Spesifikasi" field="spesifikasi" sort={query.sort} dir={query.dir} params={searchParams} />
               <th className={tableHeadClass}>Notes</th>
               <SortHeader label="SRP" field="srp" sort={query.sort} dir={query.dir} params={searchParams} />
@@ -200,7 +207,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
           <tbody className="divide-y divide-[#D6D6D6]">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-[16px] text-[13px] text-[#767676]">
+                <td colSpan={8} className="p-[16px] text-[13px] text-[#767676]">
                   Tidak ada produk yang cocok dengan filter ini.
                 </td>
               </tr>
@@ -227,6 +234,15 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
                       >
                         {row.kode_barang}
                       </Link>
+                    </td>
+                    <td className={`${tableCellClass} max-w-[240px]`}>
+                      {row.nama_produk ? (
+                        <span className="line-clamp-2 text-[12px] leading-snug">
+                          {row.nama_produk}
+                        </span>
+                      ) : (
+                        <span className={badgeClass("grey")}>belum ada</span>
+                      )}
                     </td>
                     <td className={`${tableCellClass} max-w-[360px]`}>
                       <span className="line-clamp-2 text-[12px] leading-snug">{row.spesifikasi}</span>

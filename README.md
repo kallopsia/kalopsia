@@ -85,10 +85,13 @@ npm run start
 │   ├── services.ts             # Query publik jasa & sparepart
 │   ├── admin-products.ts, admin-services.ts  # CRUD sisi server (service role)
 │   ├── product-view.ts         # Slug/brand/kategori/ringkasan spek (diturunkan saat baca)
+│   ├── kode-barang.ts          # Regex strip prefix lama PR-LAP-<BRAND>- (parser, script, slug)
+│   ├── addons.ts, admin-addons.ts, addon-labels.ts  # Add-on anti gores (baca, simpan, label)
 │   ├── slug.ts, service-schema.ts, product-schema.ts  # Validasi zod + slug URL
 │   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, harga jasa (rupiah penuh)
 ├── scripts/seed-from-xlsx.ts   # npm run db:seed
-├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install + RLS
+├── scripts/strip-kode-prefix.ts # Migrasi sekali-jalan: buang prefix PR-LAP-<BRAND>-
+├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons + RLS
 └── docs/SETUP.md               # Panduan setup & alur kerja bulanan
 ```
 
@@ -119,6 +122,15 @@ npm run start
 - **Tombol WhatsApp**: semua tombol ("Pesan Sekarang", "Chat Admin", "Beli via WhatsApp")
   menunjuk ke `/api/wa` dengan parameter (`slug`, `software`, `sparepart`, atau `pesan=<kunci>`).
   Nomor dan isi pesan dirakit di server; kunci `pesan` dibatasi whitelist.
+- **Kode barang**: prefix lama `PR-LAP-<KODE BRAND>-` tidak lagi disimpan. Parser Excel
+  membuang prefix saat membaca (`lib/kode-barang.ts`), dan data lama dibersihkan sekali
+  lewat `npx tsx scripts/strip-kode-prefix.ts` (kode yang bakal bentrok dilewati & dilaporkan).
+  Slug URL diturunkan dari kode tanpa prefix.
+- **Nama produk**: kolom `nama_produk` opsional diisi dari admin (`/admin/products` → Ubah).
+  Selama kosong, judul kartu & halaman detail fallback ke teks spesifikasi (perilaku lama).
+- **Add-on anti gores**: tabel `product_addons` (body/layar × matte/glossy, harga rupiah penuh)
+  diatur di `/admin/addons`. Di halaman produk muncul sebagai accordion opsional; pilihan
+  pembeli (maksimal satu per kategori) ikut masuk pesan WhatsApp beserta estimasi totalnya.
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
   hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di
   `supabase/migrations/` sebelum/sesudah deploy (menambah kolom/tabel aman bagi kode lama).

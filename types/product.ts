@@ -9,6 +9,8 @@ export type ProductRow = {
   is_active: boolean;
   // Opsional: kolom baru (migrasi 20260930000000); baris lama tanpa kolom ini tetap valid.
   is_featured?: boolean;
+  // Opsional: kolom baru (migrasi 20261003000000); kosong = judul fallback ke spesifikasi.
+  nama_produk?: string | null;
   created_at: string;
   updated_at: string;
 };

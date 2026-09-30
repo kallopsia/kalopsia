@@ -1,8 +1,9 @@
 import type { Product, ProductRow, SpecRingkas } from "@/types/product";
 import { productPlaceholder } from "./placeholder";
 import { hasPrice, srpToRupiah } from "./pricing";
+import { hasKodePrefix, stripKodePrefix } from "./kode-barang";
 
-// Brand diturunkan dari segmen ke-3 KODEBARANG (PR-LAP-<SEG>-...).
+// Brand diturunkan dari segmen kode brand pada prefix lama (PR-LAP-<SEG>-...).
 export const BRAND_FROM_CODE_SEGMENT: Record<string, string> = {
   AC: "Acer",
   AD: "Advan",
@@ -19,6 +20,11 @@ export const BRAND_FROM_CODE_SEGMENT: Record<string, string> = {
   TE: "Tecno",
   ZY: "Zyrex",
 };
+
+// Setelah prefix dihapus, brand dikenali dari kata pertama spesifikasi.
+const BRAND_FROM_NAME: Record<string, string> = Object.fromEntries(
+  Object.entries(BRAND_FROM_CODE_SEGMENT).map(([code, name]) => [name.toUpperCase(), name])
+);
 
 const GAMING_RE =
   /\b(ROG|TUF|NITRO|PREDATOR|LEGION|LOQ|VICTUS|OMEN|RAZER|GAMING|RTX|GTX|ZEPHYRUS|STRIX|SCAR|KATANA|SWORD|STEALTH|CROSSHAIR|RAIDER|VECTOR|PULSE|MSI)\b/i;
@@ -37,17 +43,22 @@ const PANEL_RE =
 const MEMORY_RE = /\b(\d{1,3}(?:\.\d+)?)\s?(GB|TB)\b/gi;
 
 export function productSlug(kodeBarang: string): string {
-  return kodeBarang
+  return stripKodePrefix(kodeBarang)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
 export function brandFromKode(kodeBarang: string, spesifikasi: string): string {
-  const segment = (kodeBarang.split("-")[2] || "").trim().toUpperCase();
-  const mapped = BRAND_FROM_CODE_SEGMENT[segment];
-  if (mapped) return mapped;
-  const firstWord = spesifikasi.trim().split(/\s+/)[0];
+  // Baris yang masih ber-prefix (belum kena migrasi) tetap dibaca segmen lamanya.
+  if (hasKodePrefix(kodeBarang)) {
+    const segment = (kodeBarang.split("-")[2] || "").trim().toUpperCase();
+    const mapped = BRAND_FROM_CODE_SEGMENT[segment];
+    if (mapped) return mapped;
+  }
+  const firstWord = spesifikasi.trim().split(/\s+/)[0] || "";
+  const byName = BRAND_FROM_NAME[firstWord.toUpperCase()];
+  if (byName) return byName;
   return firstWord ? firstWord.charAt(0) + firstWord.slice(1).toLowerCase() : "Lainnya";
 }
 
@@ -106,7 +117,8 @@ export function toProduct(row: ProductRow): Product {
   const spesifikasiText = normalizeSpace(row.spesifikasi || "");
   const brand = brandFromKode(row.kode_barang, spesifikasiText);
   const images = (row.image_urls || []).filter(Boolean);
-  const nama = productName(spesifikasiText);
+  const namaProduk = (row.nama_produk || "").trim();
+  const nama = namaProduk || productName(spesifikasiText);
 
   return {
     id: row.id,

@@ -3,9 +3,10 @@ import type { ImportError, ImportRow } from "./xlsx-parser";
 import type { ProductRow } from "@/types/product";
 import type { ImportLogInsert } from "@/types/import-log";
 import { formatSrp } from "./pricing";
+import { stripKodePrefix } from "./kode-barang";
 
 export type MissingAction = "deactivate" | "keep" | "delete";
-export type ChangedField = "spesifikasi" | "notes" | "srp";
+export type ChangedField = "kode_barang" | "spesifikasi" | "notes" | "srp";
 
 export type FieldChange = {
   field: ChangedField;
@@ -50,6 +51,7 @@ const UPSERT_BATCH = 500;
 const MAX_LOGGED_ERRORS = 200;
 
 export const FIELD_LABELS: Record<ChangedField, string> = {
+  kode_barang: "Kode barang",
   spesifikasi: "Spesifikasi",
   notes: "Notes",
   srp: "SRP",
@@ -67,8 +69,11 @@ export function displayChange(field: ChangedField, value: string | number | null
 
 // Kolom yang dikirim saat upsert: image_urls sengaja tidak disertakan agar
 // gambar yang sudah dikelola admin tidak pernah tertimpa oleh impor Excel.
-function toUpsertPayload(row: ImportRow) {
+type UpsertRow = ImportRow & { id?: string };
+
+function toUpsertPayload(row: UpsertRow) {
   return {
+    ...(row.id ? { id: row.id } : {}),
     kode_barang: row.kode_barang,
     spesifikasi: row.spesifikasi,
     notes: row.notes,
@@ -89,6 +94,8 @@ function diffRow(row: ImportRow, current: ProductRow): FieldChange[] {
     });
   };
 
+  // Baris existing yang masih ber-prefix lama ditulis ulang ke kode hasil strip.
+  push("kode_barang", current.kode_barang, row.kode_barang);
   push("spesifikasi", current.spesifikasi, row.spesifikasi);
   push("notes", current.notes, row.notes);
   if (Number(current.srp) !== Number(row.srp)) {
@@ -118,7 +125,9 @@ export function computeImportDiff(
   errors: ImportError[]
 ): ImportDiff {
   const existingByKode = new Map<string, ProductRow>();
-  existing.forEach((row) => existingByKode.set(row.kode_barang, row));
+  // Dicocokkan lewat kode hasil strip supaya file ber-prefix lama tetap
+  // mengenali baris existing yang sudah tanpa prefix (dan sebaliknya).
+  existing.forEach((row) => existingByKode.set(stripKodePrefix(row.kode_barang), row));
 
   const added: ImportRow[] = [];
   const changed: ChangedRow[] = [];
@@ -140,7 +149,7 @@ export function computeImportDiff(
     changed.push({ row, current, changes });
   });
 
-  const missing = existing.filter((row) => !seen.has(row.kode_barang));
+  const missing = existing.filter((row) => !seen.has(stripKodePrefix(row.kode_barang)));
 
   return {
     added,
@@ -160,14 +169,15 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 async function upsertRows(
   supabase: SupabaseClient,
-  rows: ImportRow[],
-  errors: ImportError[]
+  rows: UpsertRow[],
+  errors: ImportError[],
+  onConflict: "kode_barang" | "id"
 ): Promise<number> {
   let saved = 0;
   for (const batch of chunk(rows, UPSERT_BATCH)) {
     const { error } = await supabase
       .from("products")
-      .upsert(batch.map(toUpsertPayload), { onConflict: "kode_barang" });
+      .upsert(batch.map(toUpsertPayload), { onConflict });
     if (error) {
       errors.push({
         rowNumber: null,
@@ -187,11 +197,14 @@ export async function applyImport(
 ): Promise<ApplyResult> {
   const errors: ImportError[] = [...diff.errors];
 
-  const added = await upsertRows(supabase, diff.added, errors);
+  const added = await upsertRows(supabase, diff.added, errors, "kode_barang");
+  // Baris berubah di-upsert lewat id supaya kode barang lama yang masih
+  // ber-prefix ikut tertulis ulang tanpa membuat baris kembar.
   const changed = await upsertRows(
     supabase,
-    diff.changed.map((item) => item.row),
-    errors
+    diff.changed.map((item) => ({ ...item.row, id: item.current.id })),
+    errors,
+    "id"
   );
 
   let deactivated = 0;

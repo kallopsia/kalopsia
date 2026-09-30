@@ -50,6 +50,20 @@ export const sparepartInputSchema = z.object({
   is_active: z.boolean(),
 });
 
+export const addonUpdateSchema = z.object({
+  id: z.string().min(1, "ID add-on wajib diisi"),
+  harga: hargaSchema,
+  is_active: z.boolean(),
+});
+
+export const addonsSaveSchema = z.object({
+  addons: z
+    .array(addonUpdateSchema)
+    .min(1, "Tidak ada add-on yang dikirim")
+    .max(4, "Kombinasi add-on hanya empat"),
+});
+
 export type WindowsInstallInput = z.infer<typeof windowsInstallInputSchema>;
 export type SoftwareInput = z.infer<typeof softwareInputSchema>;
 export type SparepartInput = z.infer<typeof sparepartInputSchema>;
+export type AddonUpdate = z.infer<typeof addonUpdateSchema>;

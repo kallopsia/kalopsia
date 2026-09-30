@@ -1,12 +1,41 @@
+"use client";
+
+import { useState } from "react";
 import type { Product } from "@/types/product";
-import { formatSrp } from "@/lib/pricing";
+import type { ProductAddonRow } from "@/types/addon";
+import { formatRupiah, formatSrp } from "@/lib/pricing";
+import AddonSelector from "./AddonSelector";
 
 interface ProductPurchaseSectionProps {
   product: Product;
+  addons: ProductAddonRow[];
 }
 
-export default function ProductPurchaseSection({ product }: ProductPurchaseSectionProps) {
-  const waUrl = `/api/wa?slug=${encodeURIComponent(product.slug)}`;
+export default function ProductPurchaseSection({ product, addons }: ProductPurchaseSectionProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const toggleAddon = (id: string) => {
+    const target = addons.find((addon) => addon.id === id);
+    if (!target) return;
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((selected) => selected !== id);
+      // Satu pilihan per kategori: pilihan lain di kategori sama diganti.
+      const withoutCategory = prev.filter((selected) => {
+        const addon = addons.find((item) => item.id === selected);
+        return addon?.kategori !== target.kategori;
+      });
+      return [...withoutCategory, id];
+    });
+  };
+
+  const selectedAddons = addons.filter((addon) => selectedIds.includes(addon.id));
+  const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.harga, 0);
+  const hasUnpricedAddon = selectedAddons.some((addon) => addon.harga <= 0);
+
+  const addonParams = selectedAddons
+    .map((addon) => `&addon=${addon.kategori}:${addon.tipe}`)
+    .join("");
+  const waUrl = `/api/wa?slug=${encodeURIComponent(product.slug)}${addonParams}`;
 
   return (
     <div className="w-full border border-[#D6D6D6] bg-[#FFFFFF] p-[16px] sm:p-[24px] md:p-[40px] flex flex-col justify-between">
@@ -64,6 +93,30 @@ export default function ProductPurchaseSection({ product }: ProductPurchaseSecti
             </div>
           </div>
         )}
+
+        {addons.length > 0 && (
+          <div className="mb-[24px]">
+            <div className="text-[11px] uppercase tracking-[0.08em] text-[#767676] mb-[8px]">
+              add-on opsional
+            </div>
+            <AddonSelector addons={addons} selectedIds={selectedIds} onToggle={toggleAddon} />
+            {selectedAddons.length > 0 && product.hargaTersedia && (
+              <div className="mt-[12px] flex flex-wrap items-baseline justify-between gap-[8px] border border-[#D6D6D6] bg-[#F5F5F5] p-[12px]">
+                <span className="text-[11px] uppercase tracking-[0.08em] text-[#767676]">
+                  estimasi total (produk + add-on)
+                </span>
+                <span className="text-[16px] tabular-nums text-[#0F0E12]">
+                  {formatRupiah(product.harga + addonTotal)}
+                </span>
+                {hasUnpricedAddon && (
+                  <span className="w-full text-[11px] uppercase tracking-[0.08em] text-[#767676]">
+                    add-on bertanda &ldquo;hubungi kami&rdquo; belum termasuk estimasi
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="pt-[24px] border-t border-[#D6D6D6]">
@@ -78,6 +131,7 @@ export default function ProductPurchaseSection({ product }: ProductPurchaseSecti
 
         <div className="mt-[16px] text-[11px] uppercase tracking-[0.08em] text-[#767676] text-center">
           PESAN OTOMATIS: KODE BARANG + SPESIFIKASI + HARGA
+          {selectedAddons.length > 0 ? " + ADD-ON PILIHAN" : ""}
         </div>
       </div>
     </div>

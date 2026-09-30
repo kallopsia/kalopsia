@@ -16,6 +16,7 @@ import { formatSrp } from "@/lib/pricing";
 export type ProductFormInitial = {
   kode_barang: string;
   spesifikasi: string;
+  nama_produk: string | null;
   notes: string | null;
   srp: number;
   is_active: boolean;
@@ -36,6 +37,7 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
 
   const [kodeBarang, setKodeBarang] = useState(initial?.kode_barang ?? "");
   const [spesifikasi, setSpesifikasi] = useState(initial?.spesifikasi ?? "");
+  const [namaProduk, setNamaProduk] = useState(initial?.nama_produk ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [srp, setSrp] = useState<string>(String(initial?.srp ?? 0));
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
@@ -55,6 +57,7 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
     const payload = {
       kode_barang: kodeBarang.trim(),
       spesifikasi: spesifikasi.trim(),
+      nama_produk: namaProduk.trim() || null,
       notes: notes.trim() || null,
       srp: srpNumber,
       is_active: isActive,
@@ -88,6 +91,19 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
 
   return (
     <form onSubmit={handleSubmit} className="border border-[#D6D6D6] bg-[#FFFFFF] p-[16px] md:p-[24px]">
+      <div className="mb-[16px]">
+        <label className={labelClass} htmlFor="nama_produk">
+          Nama produk (opsional — kosongkan untuk pakai teks spesifikasi)
+        </label>
+        <input
+          id="nama_produk"
+          value={namaProduk}
+          onChange={(event) => setNamaProduk(event.target.value)}
+          placeholder="Acer Aspire 7 Pro A715"
+          className={inputClass}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px] mb-[16px]">
         <div>
           <label className={labelClass} htmlFor="kode_barang">
@@ -99,11 +115,11 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
             onChange={(event) => setKodeBarang(event.target.value)}
             disabled={isEdit}
             required
-            placeholder="PR-LAP-AC-A715-59G-516S"
+            placeholder="A715-59G-516S"
             className={inputClass}
           />
           <p className="mt-[4px] text-[11px] uppercase tracking-[0.08em] text-[#767676]">
-            format: PR-LAP-&lt;segmen brand&gt;-&lt;model&gt;
+            tanpa prefix PR-LAP-&lt;brand&gt;- (prefix lama dibuang otomatis saat impor)
           </p>
         </div>
 

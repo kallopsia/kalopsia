@@ -49,6 +49,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         initial={{
           kode_barang: product.kode_barang,
           spesifikasi: product.spesifikasi,
+          nama_produk: product.nama_produk ?? null,
           notes: product.notes,
           srp: Number(product.srp) || 0,
           is_active: product.is_active,
