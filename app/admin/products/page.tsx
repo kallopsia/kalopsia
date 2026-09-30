@@ -5,7 +5,9 @@ import { ADMIN_PER_PAGE, knownBrands, listProducts } from "@/lib/admin-products"
 import { formatSrp } from "@/lib/pricing";
 import { productPlaceholder } from "@/lib/placeholder";
 import ProductRowActions from "@/components/admin/ProductRowActions";
+import RecategorizeButton from "@/components/admin/RecategorizeButton";
 import { badgeClass, cardClass, inputClass, primaryButtonClass, tableCellClass, tableHeadClass } from "@/components/admin/styles";
+import { SCREEN_CATEGORY_LABELS } from "@/lib/screen-category";
 import type { ProductRow } from "@/types/product";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +20,7 @@ interface ProductsPageProps {
     q?: string;
     status?: string;
     brand?: string;
+    screen?: string;
     noImage?: string;
     srpZero?: string;
     noName?: string;
@@ -72,6 +75,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
     q: searchParams.q || "",
     status: (searchParams.status as "all" | "active" | "inactive") || "all",
     brand: searchParams.brand || "",
+    screen: searchParams.screen || "",
     noImage: searchParams.noImage === "1",
     srpZero: searchParams.srpZero === "1",
     noName: searchParams.noName === "1",
@@ -106,9 +110,12 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
             daftar produk
           </h1>
         </div>
-        <Link href="/admin/products/new" className={primaryButtonClass}>
-          tambah produk
-        </Link>
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <RecategorizeButton />
+          <Link href="/admin/products/new" className={primaryButtonClass}>
+            tambah produk
+          </Link>
+        </div>
       </div>
 
       <form
@@ -151,6 +158,18 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
             ))}
           </select>
         </div>
+        <div>
+          <label className="block text-[11px] uppercase tracking-[0.08em] text-[#767676] mb-[4px]">
+            Layar
+          </label>
+          <select name="screen" defaultValue={query.screen} className={inputClass}>
+            <option value="">semua ukuran</option>
+            <option value="14">14&quot;</option>
+            <option value="15">15&quot;</option>
+            <option value="16">16&quot;</option>
+            <option value="belum">belum terkategori</option>
+          </select>
+        </div>
         <div className="flex flex-col justify-end gap-[6px]">
           <label className="flex items-center gap-[8px] text-[12px] text-[#0F0E12]">
             <input type="checkbox" name="noImage" value="1" defaultChecked={query.noImage} />
@@ -191,7 +210,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
       )}
 
       <div className={`${cardClass} overflow-x-auto`}>
-        <table className="w-full min-w-[1040px] border-collapse">
+        <table className="w-full min-w-[1140px] border-collapse">
           <thead className="border-b border-[#D6D6D6]">
             <tr>
               <th className={tableHeadClass}>Gambar</th>
@@ -200,6 +219,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
               <SortHeader label="Spesifikasi" field="spesifikasi" sort={query.sort} dir={query.dir} params={searchParams} />
               <th className={tableHeadClass}>Notes</th>
               <SortHeader label="SRP" field="srp" sort={query.sort} dir={query.dir} params={searchParams} />
+              <th className={tableHeadClass}>Layar</th>
               <th className={tableHeadClass}>Status</th>
               <th className={`${tableHeadClass} text-right`}>Aksi</th>
             </tr>
@@ -207,7 +227,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
           <tbody className="divide-y divide-[#D6D6D6]">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-[16px] text-[13px] text-[#767676]">
+                <td colSpan={9} className="p-[16px] text-[13px] text-[#767676]">
                   Tidak ada produk yang cocok dengan filter ini.
                 </td>
               </tr>
@@ -258,6 +278,18 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
                       ) : (
                         <span className={badgeClass("grey")}>belum tersedia</span>
                       )}
+                    </td>
+                    <td className={`${tableCellClass} whitespace-nowrap`}>
+                      {(() => {
+                        const kategori = (row.screen?.kategori || "belum") as keyof typeof SCREEN_CATEGORY_LABELS;
+                        const manual = row.screen?.sumber === "manual";
+                        return (
+                          <span className={badgeClass(kategori === "belum" ? "red" : manual ? "blue" : "grey")}>
+                            {SCREEN_CATEGORY_LABELS[kategori] || "Belum terkategori"}
+                            {manual ? " · manual" : ""}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className={tableCellClass}>
                       <span className={badgeClass(row.is_active ? "green" : "grey")}>

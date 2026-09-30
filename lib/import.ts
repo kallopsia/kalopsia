@@ -4,6 +4,7 @@ import type { ProductRow } from "@/types/product";
 import type { ImportLogInsert } from "@/types/import-log";
 import { formatSrp } from "./pricing";
 import { stripKodePrefix } from "./kode-barang";
+import { detectScreenCategory } from "./screen-category";
 
 export type MissingAction = "deactivate" | "keep" | "delete";
 export type ChangedField = "kode_barang" | "spesifikasi" | "notes" | "srp";
@@ -190,6 +191,48 @@ async function upsertRows(
   return saved;
 }
 
+// Kategorisasi layar otomatis untuk produk hasil impor. Override manual admin
+// tidak pernah ditimpa; kegagalan (mis. tabel belum dimigrasi) tidak
+// menghentikan impor.
+async function categorizeImportedScreens(
+  supabase: SupabaseClient,
+  kodeBarangs: string[]
+): Promise<void> {
+  const kodes = Array.from(new Set(kodeBarangs)).filter(Boolean);
+  if (kodes.length === 0) return;
+  try {
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id, spesifikasi")
+      .in("kode_barang", kodes);
+    if (error || !products || products.length === 0) return;
+
+    const ids = products.map((row) => row.id);
+    const { data: existing } = await supabase
+      .from("product_screen_info")
+      .select("product_id, sumber")
+      .in("product_id", ids);
+    const manualIds = new Set(
+      (existing || []).filter((row) => row.sumber === "manual").map((row) => row.product_id)
+    );
+
+    const rows = products
+      .filter((row) => !manualIds.has(row.id))
+      .map((row) => ({
+        product_id: row.id,
+        kategori: detectScreenCategory(row.spesifikasi),
+        sumber: "auto",
+      }));
+    if (rows.length === 0) return;
+
+    for (const batch of chunk(rows, UPSERT_BATCH)) {
+      await supabase.from("product_screen_info").upsert(batch, { onConflict: "product_id" });
+    }
+  } catch {
+    // Diabaikan: kategori layar bisa diisi lewat tombol "kategorikan ulang".
+  }
+}
+
 export async function applyImport(
   supabase: SupabaseClient,
   diff: ImportDiff,
@@ -205,6 +248,11 @@ export async function applyImport(
     diff.changed.map((item) => ({ ...item.row, id: item.current.id })),
     errors,
     "id"
+  );
+
+  await categorizeImportedScreens(
+    supabase,
+    [...diff.added, ...diff.changed.map((item) => item.row)].map((row) => row.kode_barang)
   );
 
   let deactivated = 0;

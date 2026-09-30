@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getProductById } from "@/lib/admin-products";
 import { getCloudinaryPublicConfig } from "@/lib/cloudinary";
 import ProductForm from "@/components/admin/ProductForm";
+import ScreenCategoryControl from "@/components/admin/ScreenCategoryControl";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,19 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           diperbarui {new Date(product.updated_at).toLocaleString("id-ID")}
         </div>
       </div>
+
+      {product.screen ? (
+        <ScreenCategoryControl
+          productId={product.id}
+          kategori={product.screen.kategori}
+          sumber={product.screen.sumber}
+        />
+      ) : (
+        <div className="border border-[#B00020] bg-[#FFFFFF] p-[12px] mb-[16px] text-[12px] leading-[1.5] text-[#B00020]">
+          Kategori layar belum aktif: jalankan migrasi{" "}
+          <code>20261004000000_product_screen_info.sql</code> di Supabase SQL Editor.
+        </div>
+      )}
 
       <ProductForm
         mode="edit"

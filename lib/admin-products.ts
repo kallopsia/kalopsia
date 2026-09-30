@@ -18,6 +18,7 @@ export type ProductListQuery = {
   srpZero?: boolean;
   noName?: boolean;
   brand?: string;
+  screen?: string;
   sort?: string;
   dir?: "asc" | "desc";
 };
@@ -83,26 +84,68 @@ export async function listProducts(query: ProductListQuery = {}): Promise<Produc
     request = request.ilike("spesifikasi", `${sanitizeQuery(brandName)} %`);
   }
 
+  // Filter kategori layar: dibaca dari tabel admin-only product_screen_info.
+  // 'belum' = baris belum ada ATAU kategori 'belum' → komplemen dari 14/15/16.
+  const screen = (query.screen || "").trim();
+  if (screen === "14" || screen === "15" || screen === "16") {
+    const { data, error } = await supabase
+      .from("product_screen_info")
+      .select("product_id")
+      .eq("kategori", screen);
+    if (error) throw new Error(error.message);
+    const ids = (data || []).map((row) => row.product_id);
+    if (ids.length === 0) return { rows: [], count: 0, page, totalPages: 1 };
+    request = request.in("id", ids);
+  } else if (screen === "belum") {
+    const { data, error } = await supabase
+      .from("product_screen_info")
+      .select("product_id")
+      .in("kategori", ["14", "15", "16"]);
+    if (error) throw new Error(error.message);
+    const excluded = (data || []).map((row) => row.product_id);
+    if (excluded.length > 0) request = request.not("id", "in", `(${excluded.join(",")})`);
+  }
+
   const { data, error, count } = await request
     .order(sortField, { ascending })
     .range((page - 1) * perPage, page * perPage - 1);
 
   if (error) throw new Error(error.message);
 
+  const rows = normalizeRows(data);
+  await attachScreenInfo(rows);
+
   const total = count ?? 0;
   return {
-    rows: normalizeRows(data),
+    rows,
     count: total,
     page,
     totalPages: Math.max(1, Math.ceil(total / perPage)),
   };
 }
 
+// Lampirkan kategori layar (untuk tampilan admin) ke baris produk.
+async function attachScreenInfo(rows: ProductRow[]): Promise<void> {
+  if (rows.length === 0) return;
+  const { getScreenInfoMap } = await import("./product-screen");
+  const map = await getScreenInfoMap(rows.map((row) => row.id));
+  if (!map) return;
+  for (const row of rows) {
+    const info = map.get(row.id);
+    row.screen = info
+      ? { kategori: info.kategori, sumber: info.sumber }
+      : { kategori: "belum", sumber: "auto" };
+  }
+}
+
 export async function getProductById(id: string): Promise<ProductRow | null> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? normalizeRows([data])[0] : null;
+  if (!data) return null;
+  const [row] = normalizeRows([data]);
+  await attachScreenInfo([row]);
+  return row;
 }
 
 export async function createProduct(input: ProductInput): Promise<ProductRow> {
@@ -122,7 +165,10 @@ export async function createProduct(input: ProductInput): Promise<ProductRow> {
     .select()
     .single();
   if (error) throw new Error(error.message);
-  return normalizeRows([data])[0];
+  const [row] = normalizeRows([data]);
+  await safeAutoDetectScreen(row.id, row.spesifikasi);
+  await attachScreenInfo([row]);
+  return row;
 }
 
 export async function updateProduct(id: string, input: ProductInput): Promise<ProductRow> {
@@ -142,7 +188,26 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
     .select()
     .single();
   if (error) throw new Error(error.message);
-  return normalizeRows([data])[0];
+  const [row] = normalizeRows([data]);
+  // Spesifikasi berubah → deteksi ulang, tetapi override manual tidak ditimpa.
+  await safeAutoDetectScreen(row.id, row.spesifikasi);
+  await attachScreenInfo([row]);
+  return row;
+}
+
+// Deteksi layar otomatis tidak boleh menggagalkan simpan produk; bila tabel
+// belum dimigrasi, lewati diam-diam (admin tetap bisa set manual nanti).
+async function safeAutoDetectScreen(productId: string, spesifikasi: string): Promise<void> {
+  try {
+    const { autoDetectScreenCategory } = await import("./product-screen");
+    await autoDetectScreenCategory(productId, spesifikasi);
+  } catch (error) {
+    console.warn(
+      `[screen] auto-detect dilewati untuk ${productId}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
 }
 
 export async function setProductActive(id: string, isActive: boolean): Promise<ProductRow> {

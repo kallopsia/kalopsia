@@ -48,6 +48,7 @@ Jalankan semua file di `supabase/migrations/` **berurutan** (nama file = urutan 
 | `20261001000000_add_services_and_spareparts.sql` | Tabel `services_windows_install`, `software_services`, `spareparts` + RLS |
 | `20261002000000_product_addons.sql` | Tabel `product_addons` (anti gores body/layar, matte/glossy) + seed 4 baris + RLS |
 | `20261003000000_add_nama_produk.sql` | Kolom `nama_produk` (judul tampilan, opsional) di `products` |
+| `20261004000000_product_screen_info.sql` | Tabel `product_screen_info` (kategori layar 14/15/16/belum, admin-only RLS) |
 
 Isi `20260928000000_init.sql`:
 
@@ -252,7 +253,7 @@ Halaman penting:
 | `/admin/login` | Login admin (email + password Supabase Auth) |
 | `/admin` | Ringkasan: jumlah produk, statistik, riwayat impor |
 | `/admin/import` | Unggah Excel → preview diff → terapkan |
-| `/admin/products` | Tabel produk: cari, filter, sortir, ubah, aktif/nonaktif, hapus |
+| `/admin/products` | Tabel produk: cari, filter (termasuk kategori layar), sortir, ubah, aktif/nonaktif, hapus, "kategorikan ulang semua layar" |
 | `/admin/install-ulang` | Ubah biaya & deskripsi jasa install ulang Windows |
 | `/admin/software` | CRUD jasa install software (gambar via Cloudinary) |
 | `/admin/sparepart` | CRUD sparepart (gambar via Cloudinary) |

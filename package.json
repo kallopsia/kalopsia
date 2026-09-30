@@ -8,6 +8,7 @@
     "start": "next start",
     "clean": "node -e \"try { require('fs').rmSync('.next', { recursive: true, force: true }); } catch (e) {}\"",
     "lint": "next lint",
+    "test": "vitest run",
     "db:seed": "tsx scripts/seed-from-xlsx.ts"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.23.15",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.7"
   }
 }

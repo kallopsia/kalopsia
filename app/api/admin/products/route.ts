@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       noImage: searchParams.get("noImage") === "1",
       srpZero: searchParams.get("srpZero") === "1",
       brand: searchParams.get("brand") || "",
+      screen: searchParams.get("screen") || "",
       sort: searchParams.get("sort") || "kode_barang",
       dir: searchParams.get("dir") === "desc" ? "desc" : "asc",
     });

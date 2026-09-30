@@ -13,6 +13,8 @@ export type ProductRow = {
   nama_produk?: string | null;
   created_at: string;
   updated_at: string;
+  // Hanya diisi untuk tampilan admin (join product_screen_info; tabel admin-only).
+  screen?: { kategori: string; sumber: string } | null;
 };
 
 export type ProductInsert = Pick<

@@ -87,11 +87,14 @@ npm run start
 │   ├── product-view.ts         # Slug/brand/kategori/ringkasan spek (diturunkan saat baca)
 │   ├── kode-barang.ts          # Regex strip prefix lama PR-LAP-<BRAND>- (parser, script, slug)
 │   ├── addons.ts, admin-addons.ts, addon-labels.ts  # Add-on anti gores (baca, simpan, label)
+│   ├── screen-category.ts      # Deteksi kategori layar 14/15/16 dari teks spesifikasi (murni)
+│   ├── product-screen.ts       # Akses server-only product_screen_info (admin-only RLS)
 │   ├── slug.ts, service-schema.ts, product-schema.ts  # Validasi zod + slug URL
 │   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, harga jasa (rupiah penuh)
 ├── scripts/seed-from-xlsx.ts   # npm run db:seed
 ├── scripts/strip-kode-prefix.ts # Migrasi sekali-jalan: buang prefix PR-LAP-<BRAND>-
-├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons + RLS
+├── scripts/backfill-screen-category.ts # Backfill kategori layar (dry-run default, --apply)
+├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info + RLS
 └── docs/SETUP.md               # Panduan setup & alur kerja bulanan
 ```
 
@@ -131,6 +134,15 @@ npm run start
 - **Add-on anti gores**: tabel `product_addons` (body/layar × matte/glossy, harga rupiah penuh)
   diatur di `/admin/addons`. Di halaman produk muncul sebagai accordion opsional; pilihan
   pembeli (maksimal satu per kategori) ikut masuk pesan WhatsApp beserta estimasi totalnya.
+- **Kategori layar (admin-only)**: ukuran 14"/15"/16" disimpan di tabel `product_screen_info`
+  yang RLS-nya admin-only total, jadi **tidak pernah** bocor ke pengunjung maupun API publik
+  Supabase. Kategori dideteksi otomatis dari teks spesifikasi (`lib/screen-category.ts`,
+  ada unit test di `tests/`) saat produk dibuat/diubah/diimpor; admin bisa override manual
+  atau "reset ke otomatis" di halaman ubah produk, memfilter daftar produk per ukuran, dan
+  mengkategorikan ulang semua produk sekaligus. Produk yang tak terdeteksi ditandai "belum
+  terkategori". Backfill massal: `npx tsx scripts/backfill-screen-category.ts` (dry-run;
+  tambah `--apply` untuk menyimpan). Kategori ini nantinya mencocokkan harga add-on per ukuran.
+- **Test**: `npm test` menjalankan vitest (`tests/*.test.ts`), mencakup deteksi kategori layar.
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
   hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di
   `supabase/migrations/` sebelum/sesudah deploy (menambah kolom/tabel aman bagi kode lama).
