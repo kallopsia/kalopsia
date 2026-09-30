@@ -5,6 +5,7 @@ import { getProductById } from "@/lib/admin-products";
 import { getCloudinaryPublicConfig } from "@/lib/cloudinary";
 import ProductForm from "@/components/admin/ProductForm";
 import ScreenCategoryControl from "@/components/admin/ScreenCategoryControl";
+import ColorControl from "@/components/admin/ColorControl";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,22 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         </div>
       )}
 
+      {product.warna_source !== undefined ? (
+        <ColorControl
+          productId={product.id}
+          warnaKode={product.warna_kode ?? null}
+          warnaCanon={product.warna_canon ?? null}
+          warnaSource={product.warna_source ?? "auto"}
+          groupSlug={product.group_slug ?? null}
+          duplikat={product.duplikat_warna === true}
+        />
+      ) : (
+        <div className="border border-[#B00020] bg-[#FFFFFF] p-[12px] mb-[16px] text-[12px] leading-[1.5] text-[#B00020]">
+          Varian warna belum aktif: jalankan migrasi{" "}
+          <code>20261006000000_product_variants.sql</code> di Supabase SQL Editor.
+        </div>
+      )}
+
       <ProductForm
         mode="edit"
         productId={product.id}
@@ -66,6 +83,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           nama_produk: product.nama_produk ?? null,
           notes: product.notes,
           srp: Number(product.srp) || 0,
+          stok: product.stok ?? null,
           is_active: product.is_active,
           is_featured: product.is_featured === true,
           image_urls: product.image_urls || [],

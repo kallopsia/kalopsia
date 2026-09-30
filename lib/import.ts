@@ -255,6 +255,16 @@ export async function applyImport(
     [...diff.added, ...diff.changed.map((item) => item.row)].map((row) => row.kode_barang)
   );
 
+  // Deteksi warna + pengelompokan varian ulang (best-effort). regroupProducts
+  // mendeteksi ulang warna semua produk 'auto' (manual tak ditimpa) lalu
+  // menghitung group_slug + duplikat. Kegagalan tidak menghentikan impor.
+  try {
+    const { regroupProducts } = await import("./product-color");
+    await regroupProducts(false);
+  } catch {
+    // Diabaikan: warna/grup bisa dihitung lewat tombol "kelompokkan ulang".
+  }
+
   let deactivated = 0;
   let deleted = 0;
   const missingIds = diff.missing.map((row) => row.id);

@@ -19,6 +19,7 @@ export type ProductListQuery = {
   noName?: boolean;
   brand?: string;
   screen?: string;
+  duplicates?: boolean;
   sort?: string;
   dir?: "asc" | "desc";
 };
@@ -77,6 +78,7 @@ export async function listProducts(query: ProductListQuery = {}): Promise<Produc
   if (query.noImage) request = request.eq("image_urls", "{}");
   if (query.srpZero) request = request.eq("srp", 0);
   if (query.noName) request = request.or(`nama_produk.is.null,nama_produk.eq.""`);
+  if (query.duplicates) request = request.eq("duplikat_warna", true);
   // Kode barang tidak lagi memuat segmen brand, jadi filter memakai kata
   // pertama spesifikasi (tempat nama brand berada).
   if (query.brand) {
@@ -158,6 +160,7 @@ export async function createProduct(input: ProductInput): Promise<ProductRow> {
       nama_produk: input.nama_produk || null,
       notes: input.notes || null,
       srp: input.srp,
+      stok: input.stok ?? null,
       image_urls: input.image_urls,
       is_active: input.is_active,
       is_featured: input.is_featured,
@@ -167,8 +170,10 @@ export async function createProduct(input: ProductInput): Promise<ProductRow> {
   if (error) throw new Error(error.message);
   const [row] = normalizeRows([data]);
   await safeAutoDetectScreen(row.id, row.spesifikasi);
-  await attachScreenInfo([row]);
-  return row;
+  await safeAutoDetectColor(row.id, row.nama_produk, row.spesifikasi);
+  await safeRegroup();
+  const fresh = await getProductById(row.id);
+  return fresh || row;
 }
 
 export async function updateProduct(id: string, input: ProductInput): Promise<ProductRow> {
@@ -180,6 +185,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
       nama_produk: input.nama_produk || null,
       notes: input.notes || null,
       srp: input.srp,
+      stok: input.stok ?? null,
       image_urls: input.image_urls,
       is_active: input.is_active,
       is_featured: input.is_featured,
@@ -191,8 +197,10 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
   const [row] = normalizeRows([data]);
   // Spesifikasi berubah → deteksi ulang, tetapi override manual tidak ditimpa.
   await safeAutoDetectScreen(row.id, row.spesifikasi);
-  await attachScreenInfo([row]);
-  return row;
+  await safeAutoDetectColor(row.id, row.nama_produk, row.spesifikasi);
+  await safeRegroup();
+  const fresh = await getProductById(row.id);
+  return fresh || row;
 }
 
 // Deteksi layar otomatis tidak boleh menggagalkan simpan produk; bila tabel
@@ -206,6 +214,38 @@ async function safeAutoDetectScreen(productId: string, spesifikasi: string): Pro
       `[screen] auto-detect dilewati untuk ${productId}: ${
         error instanceof Error ? error.message : String(error)
       }`
+    );
+  }
+}
+
+// Deteksi warna otomatis tidak boleh menggagalkan simpan produk; bila kolom
+// varian belum dimigrasi, lewati diam-diam (admin tetap bisa set manual nanti).
+async function safeAutoDetectColor(
+  productId: string,
+  namaProduk: string | null | undefined,
+  spesifikasi: string
+): Promise<void> {
+  try {
+    const { autoDetectColor } = await import("./product-color");
+    await autoDetectColor(productId, namaProduk, spesifikasi);
+  } catch (error) {
+    console.warn(
+      `[warna] auto-detect dilewati untuk ${productId}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+// Hitung ulang grup varian setelah simpan. Best-effort: kegagalan (mis. migrasi
+// belum jalan) tidak boleh membatalkan simpan produk.
+async function safeRegroup(): Promise<void> {
+  try {
+    const { regroupProducts } = await import("./product-color");
+    await regroupProducts(false);
+  } catch (error) {
+    console.warn(
+      `[warna] regroup dilewati: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }

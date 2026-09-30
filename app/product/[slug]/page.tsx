@@ -1,13 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getProductBySlug, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
+import {
+  getProductBySlug,
+  getVariantGroup,
+  PRODUCTS_REVALIDATE_SECONDS,
+} from "@/lib/products";
 import { getActiveAddons, resolveAddonsForScreen } from "@/lib/addons";
 import { getScreenInfo } from "@/lib/product-screen";
 import { formatSrp } from "@/lib/pricing";
-import ProductGallery from "@/components/ProductGallery";
-import ProductPurchaseSection from "@/components/ProductPurchaseSection";
-import ProductSpecificationsAccordion from "@/components/ProductSpecificationsAccordion";
+import ProductVariantView from "@/components/ProductVariantView";
 
 interface ProductPageProps {
   params: {
@@ -36,10 +38,19 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  // Slug anggota varian (bukan perwakilan) → gabungkan ke satu URL grup (308).
+  if (product.groupSlug && product.groupSlug !== product.slug) {
+    permanentRedirect(`/product/${product.groupSlug}`);
+  }
+
+  const variants = (await getVariantGroup(params.slug)) || [product];
+  const representative = variants[0];
+
   const addons = await getActiveAddons();
-  // Kategori layar dibaca server-side (service role) hanya untuk memilih harga
-  // add-on yang benar; label kategorinya tidak pernah dikirim ke client.
-  const screenInfo = await getScreenInfo(product.id);
+  // Semua anggota grup berbagi kategori layar (bagian dari kunci grup), jadi
+  // harga add-on cukup dihitung sekali dari perwakilan. Label kategori layar
+  // tidak pernah dikirim ke client — hanya angka harga.
+  const screenInfo = await getScreenInfo(representative.id);
   const resolvedAddons = resolveAddonsForScreen(addons, screenInfo?.kategori ?? "belum");
 
   return (
@@ -51,10 +62,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               KATALOG
             </Link>
             <span className="hidden sm:inline">/</span>
-            <span className="hidden sm:inline">{product.brand}</span>
+            <span className="hidden sm:inline">{representative.brand}</span>
             <span>/</span>
             <span className="text-[#0F0E12] truncate max-w-[180px] sm:max-w-[320px] md:max-w-none">
-              {product.kodeBarang}
+              {representative.kodeBarang}
             </span>
           </div>
           <span className="hidden sm:inline-block">
@@ -67,32 +78,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
       <section className="w-full flex-1 bg-[#F5F5F5] pt-[24px] md:pt-[64px] pb-[48px] md:pb-[96px]">
         <div className="max-w-[1040px] mx-auto px-[16px] md:px-[64px]">
-          <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 md:gap-[40px] items-start mb-[48px] md:mb-[96px]">
-            <div>
-              <ProductGallery images={product.gambar} productName={product.nama} />
-            </div>
-            <div>
-              <ProductPurchaseSection product={product} addons={resolvedAddons} />
-            </div>
-          </div>
-
-          <div className="w-full pt-[32px] md:pt-[40px] border-t border-[#D6D6D6]">
-            <div className="mb-[24px]">
-              <div className="text-[11px] uppercase tracking-[0.08em] text-[#767676] mb-[4px]">
-                AUDIT HARDWARE LENGKAP
-              </div>
-              <h2 className="text-[24px] md:text-[32px] font-light text-[#0F0E12] tracking-tight">
-                Spesifikasi Teknis
-              </h2>
-            </div>
-
-            <ProductSpecificationsAccordion
-              spesifikasiText={product.spesifikasiText}
-              ringkasan={product.spesifikasi}
-              notes={product.catatan}
-              kodeBarang={product.kodeBarang}
-            />
-          </div>
+          <ProductVariantView variants={variants} addons={resolvedAddons} />
         </div>
       </section>
     </div>

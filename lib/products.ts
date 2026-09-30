@@ -38,9 +38,32 @@ const getCatalogState = cache(async (): Promise<CatalogState> => {
   return { rows, status: rows.length > 0 ? "ok" : "empty" };
 });
 
-export const getProducts = cache(async (): Promise<Product[]> => {
+// Semua produk aktif (termasuk setiap varian warna), urut kode_barang ascending.
+// Dipakai sebagai sumber untuk collapse grup & resolusi slug varian.
+export const getCatalogProducts = cache(async (): Promise<Product[]> => {
   const state = await getCatalogState();
   return state.rows.map(toProduct);
+});
+
+// Kunci tampilan sebuah produk di listing: slug grup bila tergabung, else slug sendiri.
+function listingKey(product: Product): string {
+  return product.groupSlug || product.slug;
+}
+
+// Daftar untuk storefront (shop/landing): satu entri per grup varian.
+// Perwakilan = produk dengan kode_barang terendah; karena getCatalogProducts
+// sudah urut ascending, kemunculan pertama tiap kunci adalah perwakilannya.
+export const getProducts = cache(async (): Promise<Product[]> => {
+  const products = await getCatalogProducts();
+  const seen = new Set<string>();
+  const collapsed: Product[] = [];
+  for (const product of products) {
+    const key = listingKey(product);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    collapsed.push(product);
+  }
+  return collapsed;
 });
 
 // Produk unggulan untuk landing page: baris dengan is_featured=true, urut kode
@@ -50,10 +73,24 @@ export const LANDING_SHOWCASE_SIZE = 8;
 
 export const getFeaturedProducts = cache(async (): Promise<Product[]> => {
   const state = await getCatalogState();
-  const featured = state.rows.filter((row) => row.is_featured === true);
-  const source =
-    featured.length > 0 ? featured : state.rows.slice(0, LANDING_SHOWCASE_SIZE);
-  return source.slice(0, LANDING_SHOWCASE_SIZE).map(toProduct);
+  const mapped = state.rows.map(toProduct);
+  const featured = mapped.filter((product, index) => {
+    const row = state.rows[index];
+    return row.is_featured === true;
+  });
+  const source = featured.length > 0 ? featured : mapped;
+
+  // Collapse grup varian supaya landing tidak menampilkan warna yang sama dua kali.
+  const seen = new Set<string>();
+  const collapsed: Product[] = [];
+  for (const product of source) {
+    const key = listingKey(product);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    collapsed.push(product);
+    if (collapsed.length >= LANDING_SHOWCASE_SIZE) break;
+  }
+  return collapsed;
 });
 
 export async function getCatalogStatus(): Promise<CatalogStatus> {
@@ -61,13 +98,33 @@ export async function getCatalogStatus(): Promise<CatalogStatus> {
   return state.status;
 }
 
+// Cari produk berdasarkan slug apa pun (perwakilan maupun anggota varian).
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
-  const products = await getProducts();
+  const products = await getCatalogProducts();
   return products.find((product) => product.slug === slug) || null;
 });
 
+// Semua anggota grup varian untuk sebuah slug (perwakilan di urutan pertama).
+// Produk tunggal (tanpa grup) dikembalikan sebagai array berisi dirinya sendiri.
+export const getVariantGroup = cache(async (slug: string): Promise<Product[] | null> => {
+  const products = await getCatalogProducts();
+  const product = products.find((item) => item.slug === slug);
+  if (!product) return null;
+
+  const groupSlug = product.groupSlug;
+  if (!groupSlug) return [product];
+
+  const members = products.filter((item) => item.groupSlug === groupSlug);
+  // Perwakilan (slug === groupSlug) di depan, sisanya urut kode_barang.
+  return members.sort((a, b) => {
+    if (a.slug === groupSlug) return -1;
+    if (b.slug === groupSlug) return 1;
+    return a.kodeBarang.localeCompare(b.kodeBarang);
+  });
+});
+
 export async function getAllProductSlugs(): Promise<string[]> {
-  const products = await getProducts();
+  const products = await getCatalogProducts();
   return Array.from(new Set(products.map((product) => product.slug)));
 }
 

@@ -42,7 +42,12 @@ export default function ProductPurchaseSection({ product, addons }: ProductPurch
       <div>
         <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.08em] mb-[16px] pb-[8px] border-b border-[#D6D6D6]">
           <span className="text-[#767676]">{product.brand}</span>
-          {product.hargaTersedia ? (
+          {!product.tersedia ? (
+            <span className="inline-flex items-center gap-[6px] text-[#B00020]">
+              <span className="w-[6px] h-[6px] bg-[#B00020]" />
+              TIDAK TERSEDIA
+            </span>
+          ) : product.hargaTersedia ? (
             <span className="inline-flex items-center gap-[6px] text-[#0071BB]">
               <span className="w-[6px] h-[6px] bg-[#0071BB]" />
               UNIT BARU / RESMI
@@ -120,18 +125,33 @@ export default function ProductPurchaseSection({ product, addons }: ProductPurch
       </div>
 
       <div className="pt-[24px] border-t border-[#D6D6D6]">
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-wa block w-full py-[16px] px-[24px] text-center text-[14px] uppercase tracking-[0.08em] select-none"
-        >
-          {product.hargaTersedia ? "BELI VIA WHATSAPP" : "TANYA HARGA VIA WHATSAPP"}
-        </a>
+        {product.tersedia ? (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-wa block w-full py-[16px] px-[24px] text-center text-[14px] uppercase tracking-[0.08em] select-none"
+          >
+            {product.hargaTersedia ? "BELI VIA WHATSAPP" : "TANYA HARGA VIA WHATSAPP"}
+          </a>
+        ) : (
+          <span
+            aria-disabled="true"
+            className="block w-full py-[16px] px-[24px] text-center text-[14px] uppercase tracking-[0.08em] select-none border border-[#D6D6D6] bg-[#F5F5F5] text-[#767676] cursor-not-allowed"
+          >
+            TIDAK TERSEDIA
+          </span>
+        )}
 
         <div className="mt-[16px] text-[11px] uppercase tracking-[0.08em] text-[#767676] text-center">
-          PESAN OTOMATIS: KODE BARANG + SPESIFIKASI + HARGA
-          {selectedAddons.length > 0 ? " + ADD-ON PILIHAN" : ""}
+          {product.tersedia ? (
+            <>
+              PESAN OTOMATIS: KODE BARANG + SPESIFIKASI + HARGA
+              {selectedAddons.length > 0 ? " + ADD-ON PILIHAN" : ""}
+            </>
+          ) : (
+            <>STOK HABIS — HUBUNGI KAMI UNTUK KETERSEDIAAN</>
+          )}
         </div>
       </div>
     </div>

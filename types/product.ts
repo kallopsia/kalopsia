@@ -15,6 +15,13 @@ export type ProductRow = {
   updated_at: string;
   // Hanya diisi untuk tampilan admin (join product_screen_info; tabel admin-only).
   screen?: { kategori: string; sumber: string } | null;
+  // Kolom varian (migrasi 20261006000000); baris lama tanpa kolom ini tetap valid.
+  stok?: number | null;
+  warna_kode?: string | null;
+  warna_canon?: string | null;
+  warna_source?: "auto" | "manual";
+  group_slug?: string | null;
+  duplikat_warna?: boolean;
 };
 
 export type ProductInsert = Pick<
@@ -49,4 +56,11 @@ export type Product = {
   gambar: string[];
   isActive: boolean;
   updatedAt: string;
+  // Varian warna & stok (migrasi 20261006000000).
+  // `tersedia` = stok tidak dilacak (null) ATAU stok > 0.
+  stok: number | null;
+  tersedia: boolean;
+  warnaKode: string | null;
+  warnaCanon: string | null;
+  groupSlug: string | null;
 };

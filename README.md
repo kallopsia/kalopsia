@@ -89,13 +89,17 @@ npm run start
 │   ├── addons.ts, admin-addons.ts, addon-labels.ts  # Add-on anti gores (baca, simpan, label)
 │   ├── screen-category.ts      # Deteksi kategori layar 14/15/16 dari teks spesifikasi (murni)
 │   ├── product-screen.ts       # Akses server-only product_screen_info (admin-only RLS)
+│   ├── color-config.ts         # Daftar 42 kode warna + peta alias kanonik (satu-satunya sumber)
+│   ├── color-category.ts       # Deteksi warna (longest-match, word-boundary) + kunci grup varian (murni)
+│   ├── product-color.ts        # Server-only: deteksi warna, override manual, regroup varian
 │   ├── order-intents.ts        # Snapshot harga saat klik WA (tabel order_intents, admin-only)
 │   ├── slug.ts, service-schema.ts, product-schema.ts  # Validasi zod + slug URL
 │   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, harga jasa (rupiah penuh)
 ├── scripts/seed-from-xlsx.ts   # npm run db:seed
 ├── scripts/strip-kode-prefix.ts # Migrasi sekali-jalan: buang prefix PR-LAP-<BRAND>-
 ├── scripts/backfill-screen-category.ts # Backfill kategori layar (dry-run default, --apply)
-├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info, order_intents + RLS
+├── scripts/regroup-products.ts # Deteksi warna + kelompokkan varian (dry-run default, --apply)
+├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info, order_intents + kolom varian (stok/warna/grup) + RLS
 └── docs/SETUP.md               # Panduan setup & alur kerja bulanan
 ```
 
@@ -150,7 +154,20 @@ npm run start
   mengkategorikan ulang semua produk sekaligus. Produk yang tak terdeteksi ditandai "belum
   terkategori". Backfill massal: `npx tsx scripts/backfill-screen-category.ts` (dry-run;
   tambah `--apply` untuk menyimpan). Kategori ini dipakai mencocokkan harga add-on per ukuran.
-- **Test**: `npm test` menjalankan vitest (`tests/*.test.ts`), mencakup deteksi kategori layar.
+- **Varian warna**: produk dengan nama + spesifikasi (tanpa kode warna) + kategori layar yang
+  sama digabung ke **satu halaman** dengan pemilih warna; tiap varian tetap punya harga, stok,
+  kode barang, dan fotonya sendiri. Warna dideteksi otomatis dari spesifikasi (`lib/color-config.ts`
+  = satu-satunya daftar 42 kode + alias; `lib/color-category.ts` = longest-match-first, word-boundary,
+  tanpa match di dalam kata mis. SAND pada SANDISK). URL varian lama di-redirect (308) ke URL grup;
+  shop/landing hanya menampilkan satu kartu per grup. Varian habis tetap terlihat sebagai
+  "tidak tersedia" (tidak disembunyikan); produk tanpa kode warna = warna tunggal, tanpa pemilih.
+  Deteksi jalan saat create/update/impor + tombol "kelompokkan ulang semua produk" di admin; admin
+  bisa override warna manual atau "reset ke otomatis". Kunci grup + warna sama persis → ditandai
+  **duplikat** (tidak digabung, perlu review; filter "duplikat warna" di daftar produk). Kolom
+  `stok` (NULL = tidak dilacak/dianggap tersedia, 0 = habis). Grup dihitung ulang massal:
+  `npx tsx scripts/regroup-products.ts` (dry-run; tambah `--apply` untuk menyimpan).
+- **Test**: `npm test` menjalankan vitest (`tests/*.test.ts`), mencakup deteksi kategori layar
+  dan deteksi warna (longest-match, word-boundary, alias, kunci grup varian).
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
   hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di
   `supabase/migrations/` sebelum/sesudah deploy (menambah kolom/tabel aman bagi kode lama).

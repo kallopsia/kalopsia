@@ -50,6 +50,7 @@ Jalankan semua file di `supabase/migrations/` **berurutan** (nama file = urutan 
 | `20261003000000_add_nama_produk.sql` | Kolom `nama_produk` (judul tampilan, opsional) di `products` |
 | `20261004000000_product_screen_info.sql` | Tabel `product_screen_info` (kategori layar 14/15/16/belum, admin-only RLS) |
 | `20261005000000_addon_price_per_screen_and_order_intents.sql` | Kolom `harga_14/15/16` di `product_addons` + tabel `order_intents` (snapshot harga saat klik WA) |
+| `20261006000000_product_variants.sql` | Kolom varian di `products`: `stok`, `warna_kode`, `warna_canon`, `warna_source`, `group_slug`, `duplikat_warna` + index |
 
 Isi `20260928000000_init.sql`:
 
@@ -246,7 +247,7 @@ Halaman penting:
 | `/` | Landing page: 8 produk unggulan (`is_featured`) + tombol ke katalog |
 | `/shop` | Katalog utama + pencarian + pagination |
 | `/katalog/gaming` `/katalog/ultrabook` `/katalog/produktivitas` | Katalog per kategori |
-| `/product/<slug>` | Detail produk (slug diturunkan dari `KODEBARANG`) |
+| `/product/<slug>` | Detail produk (slug diturunkan dari `KODEBARANG`). Varian warna digabung ke satu halaman dengan pemilih warna; slug anggota lama di-redirect (308) ke slug grup |
 | `/lainnya/install-ulang-windows` | Jasa install ulang Windows (biaya dari database) |
 | `/lainnya/install-software` `/lainnya/install-software/<slug>` | Jasa install software + detail |
 | `/lainnya/sparepart` `/lainnya/sparepart/<slug>` | Sparepart + detail |
@@ -254,7 +255,7 @@ Halaman penting:
 | `/admin/login` | Login admin (email + password Supabase Auth) |
 | `/admin` | Ringkasan: jumlah produk, statistik, riwayat impor |
 | `/admin/import` | Unggah Excel → preview diff → terapkan |
-| `/admin/products` | Tabel produk: cari, filter (termasuk kategori layar), sortir, ubah, aktif/nonaktif, hapus, "kategorikan ulang semua layar" |
+| `/admin/products` | Tabel produk: cari, filter (kategori layar, duplikat warna), sortir, ubah, aktif/nonaktif, hapus, "kategorikan ulang semua layar", "kelompokkan ulang semua produk" (deteksi warna + grup varian) |
 | `/admin/install-ulang` | Ubah biaya & deskripsi jasa install ulang Windows |
 | `/admin/software` | CRUD jasa install software (gambar via Cloudinary) |
 | `/admin/sparepart` | CRUD sparepart (gambar via Cloudinary) |

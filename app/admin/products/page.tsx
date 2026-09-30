@@ -6,6 +6,7 @@ import { formatSrp } from "@/lib/pricing";
 import { productPlaceholder } from "@/lib/placeholder";
 import ProductRowActions from "@/components/admin/ProductRowActions";
 import RecategorizeButton from "@/components/admin/RecategorizeButton";
+import RegroupButton from "@/components/admin/RegroupButton";
 import { badgeClass, cardClass, inputClass, primaryButtonClass, tableCellClass, tableHeadClass } from "@/components/admin/styles";
 import { SCREEN_CATEGORY_LABELS } from "@/lib/screen-category";
 import type { ProductRow } from "@/types/product";
@@ -24,6 +25,7 @@ interface ProductsPageProps {
     noImage?: string;
     srpZero?: string;
     noName?: string;
+    duplicates?: string;
     sort?: string;
     dir?: string;
   };
@@ -79,6 +81,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
     noImage: searchParams.noImage === "1",
     srpZero: searchParams.srpZero === "1",
     noName: searchParams.noName === "1",
+    duplicates: searchParams.duplicates === "1",
     sort: searchParams.sort || "kode_barang",
     dir: (searchParams.dir === "desc" ? "desc" : "asc") as "asc" | "desc",
   };
@@ -112,6 +115,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
         </div>
         <div className="flex flex-wrap items-center gap-[8px]">
           <RecategorizeButton />
+          <RegroupButton />
           <Link href="/admin/products/new" className={primaryButtonClass}>
             tambah produk
           </Link>
@@ -183,6 +187,10 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
             <input type="checkbox" name="noName" value="1" defaultChecked={query.noName} />
             belum ada nama produk
           </label>
+          <label className="flex items-center gap-[8px] text-[12px] text-[#B00020]">
+            <input type="checkbox" name="duplicates" value="1" defaultChecked={query.duplicates} />
+            duplikat warna (perlu review)
+          </label>
         </div>
         <div className="sm:col-span-2 lg:col-span-4 flex flex-wrap items-center gap-[12px]">
           <button
@@ -210,7 +218,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
       )}
 
       <div className={`${cardClass} overflow-x-auto`}>
-        <table className="w-full min-w-[1140px] border-collapse">
+        <table className="w-full min-w-[1300px] border-collapse">
           <thead className="border-b border-[#D6D6D6]">
             <tr>
               <th className={tableHeadClass}>Gambar</th>
@@ -220,6 +228,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
               <th className={tableHeadClass}>Notes</th>
               <SortHeader label="SRP" field="srp" sort={query.sort} dir={query.dir} params={searchParams} />
               <th className={tableHeadClass}>Layar</th>
+              <th className={tableHeadClass}>Warna / Grup</th>
               <th className={tableHeadClass}>Status</th>
               <th className={`${tableHeadClass} text-right`}>Aksi</th>
             </tr>
@@ -227,7 +236,7 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
           <tbody className="divide-y divide-[#D6D6D6]">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-[16px] text-[13px] text-[#767676]">
+                <td colSpan={10} className="p-[16px] text-[13px] text-[#767676]">
                   Tidak ada produk yang cocok dengan filter ini.
                 </td>
               </tr>
@@ -290,6 +299,26 @@ export default async function AdminProductsPage({ searchParams }: ProductsPagePr
                           </span>
                         );
                       })()}
+                    </td>
+                    <td className={`${tableCellClass} max-w-[200px]`}>
+                      <div className="flex flex-col gap-[4px] items-start">
+                        {row.warna_kode ? (
+                          <span className={badgeClass(row.warna_source === "manual" ? "blue" : "grey")}>
+                            {row.warna_kode}
+                            {row.warna_source === "manual" ? " · manual" : ""}
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-[#767676]">warna tunggal</span>
+                        )}
+                        {row.duplikat_warna && (
+                          <span className={badgeClass("red")}>duplikat</span>
+                        )}
+                        {row.group_slug && (
+                          <span className="text-[11px] text-[#767676] break-all">
+                            grup: {row.group_slug}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className={tableCellClass}>
                       <span className={badgeClass(row.is_active ? "green" : "grey")}>

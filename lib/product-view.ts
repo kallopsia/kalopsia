@@ -119,6 +119,7 @@ export function toProduct(row: ProductRow): Product {
   const images = (row.image_urls || []).filter(Boolean);
   const namaProduk = (row.nama_produk || "").trim();
   const nama = namaProduk || productName(spesifikasiText);
+  const stok = row.stok === null || row.stok === undefined ? null : Number(row.stok);
 
   return {
     id: row.id,
@@ -136,6 +137,11 @@ export function toProduct(row: ProductRow): Product {
     gambar: images.length > 0 ? images : [productPlaceholder(nama)],
     isActive: row.is_active,
     updatedAt: row.updated_at,
+    stok,
+    tersedia: stok === null || stok > 0,
+    warnaKode: (row.warna_kode || "").trim() || null,
+    warnaCanon: (row.warna_canon || "").trim() || null,
+    groupSlug: (row.group_slug || "").trim() || null,
   };
 }
 

@@ -19,6 +19,7 @@ export type ProductFormInitial = {
   nama_produk: string | null;
   notes: string | null;
   srp: number;
+  stok: number | null;
   is_active: boolean;
   is_featured: boolean;
   image_urls: string[];
@@ -40,6 +41,9 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
   const [namaProduk, setNamaProduk] = useState(initial?.nama_produk ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [srp, setSrp] = useState<string>(String(initial?.srp ?? 0));
+  const [stok, setStok] = useState<string>(
+    initial?.stok === null || initial?.stok === undefined ? "" : String(initial.stok)
+  );
   const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [isFeatured, setIsFeatured] = useState(initial?.is_featured ?? false);
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.image_urls ?? []);
@@ -47,6 +51,7 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
   const [formError, setFormError] = useState("");
 
   const srpNumber = Number(srp) || 0;
+  const stokValue = stok.trim() === "" ? null : Number(stok);
   const isEdit = mode === "edit";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -60,6 +65,7 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
       nama_produk: namaProduk.trim() || null,
       notes: notes.trim() || null,
       srp: srpNumber,
+      stok: stokValue,
       is_active: isActive,
       is_featured: isFeatured,
       image_urls: imageUrls,
@@ -170,6 +176,31 @@ export default function ProductForm({ mode, productId, initial, cloudinary }: Pr
             placeholder="(BP NEO)"
             className={inputClass}
           />
+        </div>
+
+        <div>
+          <label className={labelClass} htmlFor="stok">
+            Stok (kosongkan = tidak dilacak / selalu tersedia)
+          </label>
+          <input
+            id="stok"
+            type="number"
+            min={0}
+            step={1}
+            value={stok}
+            onChange={(event) => setStok(event.target.value)}
+            placeholder="kosong = tak dilacak"
+            className={inputClass}
+          />
+          <div className="mt-[4px] flex items-center gap-[8px]">
+            {stokValue === null ? (
+              <span className={badgeClass("grey")}>stok tidak dilacak</span>
+            ) : stokValue > 0 ? (
+              <span className={badgeClass("green")}>{stokValue} tersedia</span>
+            ) : (
+              <span className={badgeClass("red")}>habis — tampil &ldquo;tidak tersedia&rdquo;</span>
+            )}
+          </div>
         </div>
       </div>
 

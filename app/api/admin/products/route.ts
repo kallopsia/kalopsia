@@ -22,6 +22,8 @@ export async function GET(request: Request) {
       status: (searchParams.get("status") as "all" | "active" | "inactive") || "all",
       noImage: searchParams.get("noImage") === "1",
       srpZero: searchParams.get("srpZero") === "1",
+      noName: searchParams.get("noName") === "1",
+      duplicates: searchParams.get("duplicates") === "1",
       brand: searchParams.get("brand") || "",
       screen: searchParams.get("screen") || "",
       sort: searchParams.get("sort") || "kode_barang",
