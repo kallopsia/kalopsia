@@ -53,6 +53,9 @@ export const sparepartInputSchema = z.object({
 export const addonUpdateSchema = z.object({
   id: z.string().min(1, "ID add-on wajib diisi"),
   harga: hargaSchema,
+  harga_14: hargaSchema,
+  harga_15: hargaSchema,
+  harga_16: hargaSchema,
   is_active: z.boolean(),
 });
 

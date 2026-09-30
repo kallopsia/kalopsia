@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { ADDON_CATEGORY_LABELS, ADDON_TYPE_LABELS } from "@/lib/addon-labels";
 import { formatServicePrice } from "@/lib/pricing";
-import type { AddonKategori, ProductAddonRow } from "@/types/addon";
+import type { AddonKategori, ResolvedAddon } from "@/types/addon";
 
 interface AddonSelectorProps {
-  addons: ProductAddonRow[];
+  addons: ResolvedAddon[];
   selectedIds: string[];
   onToggle: (id: string) => void;
 }

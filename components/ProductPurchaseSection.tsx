@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import type { Product } from "@/types/product";
-import type { ProductAddonRow } from "@/types/addon";
+import type { ResolvedAddon } from "@/types/addon";
 import { formatRupiah, formatSrp } from "@/lib/pricing";
 import AddonSelector from "./AddonSelector";
 
 interface ProductPurchaseSectionProps {
   product: Product;
-  addons: ProductAddonRow[];
+  addons: ResolvedAddon[];
 }
 
 export default function ProductPurchaseSection({ product, addons }: ProductPurchaseSectionProps) {

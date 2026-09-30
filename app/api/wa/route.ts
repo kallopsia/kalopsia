@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getProductBySlug } from "@/lib/products";
 import { getSoftwareBySlug, getSparepartBySlug } from "@/lib/services";
 import { addonLabel } from "@/lib/addon-labels";
-import { getActiveAddons } from "@/lib/addons";
+import { getActiveAddons, resolveAddonPrice } from "@/lib/addons";
+import { getScreenInfo } from "@/lib/product-screen";
+import { logOrderIntent } from "@/lib/order-intents";
+import type { OrderIntentAddon } from "@/types/order-intent";
 import {
   formatRupiah,
   formatServicePrice,
@@ -44,6 +47,14 @@ export async function GET(request: NextRequest) {
     if (!software) {
       return new NextResponse("Software tidak ditemukan.", { status: 404 });
     }
+    await logOrderIntent({
+      jenis: "software",
+      kode: software.slug,
+      nama: software.nama,
+      slug: software.slug,
+      harga_produk: software.harga,
+      estimated_total: software.harga,
+    });
     return redirectWith(
       [
         `Halo, saya ingin pesan jasa install software berikut:`,
@@ -62,6 +73,14 @@ export async function GET(request: NextRequest) {
     if (!sparepart) {
       return new NextResponse("Sparepart tidak ditemukan.", { status: 404 });
     }
+    await logOrderIntent({
+      jenis: "sparepart",
+      kode: sparepart.slug,
+      nama: sparepart.nama,
+      slug: sparepart.slug,
+      harga_produk: sparepart.harga,
+      estimated_total: sparepart.harga,
+    });
     return redirectWith(
       [
         `Halo, saya ingin pesan sparepart berikut:`,
@@ -83,6 +102,7 @@ export async function GET(request: NextRequest) {
     if (!message) {
       return new NextResponse("Parameter slug produk diperlukan.", { status: 400 });
     }
+    await logOrderIntent({ jenis: "pesan", kode: presetKey || "chat" });
     return redirectWith(message);
   }
 
@@ -94,6 +114,11 @@ export async function GET(request: NextRequest) {
   const hargaText = product.hargaTersedia
     ? formatSrp(product.srp)
     : `${HARGA_BELUM_TERSEDIA} (mohon tanya harga terbaru)`;
+
+  // Kategori layar produk menentukan harga add-on yang dipakai. Dibaca di
+  // server (service role) — tidak pernah dikirim ke client.
+  const screenInfo = await getScreenInfo(product.id);
+  const screenKategori = screenInfo?.kategori ?? "belum";
 
   // Add-on dipilih di halaman produk (?addon=body:matte). Divalidasi ulang di
   // server terhadap add-on aktif supaya isi chat tidak bisa disuntik dari URL.
@@ -109,6 +134,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Harga add-on diselesaikan per ukuran layar; snapshot disimpan untuk pesanan.
+  const resolved = selectedAddons.map((addon) => ({
+    addon,
+    ...resolveAddonPrice(addon, screenKategori),
+  }));
+
   const lines = [
     `Halo, saya ingin membeli laptop berikut:`,
     ``,
@@ -120,14 +151,17 @@ export async function GET(request: NextRequest) {
     `Harga: ${hargaText}`,
   ];
 
-  if (selectedAddons.length > 0) {
+  const addonTotal = resolved.reduce((sum, item) => sum + item.harga, 0);
+  const unpriced = resolved.some((item) => item.harga <= 0);
+
+  if (resolved.length > 0) {
     lines.push(``, `Add-on:`);
-    selectedAddons.forEach((addon) => {
-      lines.push(`+ ${addonLabel(addon.kategori, addon.tipe)} — ${formatServicePrice(addon.harga)}`);
+    resolved.forEach((item) => {
+      lines.push(
+        `+ ${addonLabel(item.addon.kategori, item.addon.tipe)} — ${formatServicePrice(item.harga)}`
+      );
     });
     if (product.hargaTersedia) {
-      const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.harga, 0);
-      const unpriced = selectedAddons.some((addon) => addon.harga <= 0);
       lines.push(
         `Estimasi total: ${formatRupiah(srpToRupiah(product.srp) + addonTotal)}` +
           (unpriced ? " (add-on bertanda Hubungi kami belum termasuk)" : "")
@@ -137,6 +171,25 @@ export async function GET(request: NextRequest) {
 
   lines.push(``, `Apakah unit ini masih tersedia? Terima kasih.`);
   const message = lines.join("\n");
+
+  const intentAddons: OrderIntentAddon[] = resolved.map((item) => ({
+    kategori: item.addon.kategori,
+    tipe: item.addon.tipe,
+    label: addonLabel(item.addon.kategori, item.addon.tipe),
+    harga: item.harga,
+  }));
+  await logOrderIntent({
+    jenis: "produk",
+    product_id: product.id,
+    kode: product.kodeBarang,
+    nama: product.nama,
+    slug: product.slug,
+    screen_kategori: screenKategori,
+    harga_produk: product.hargaTersedia ? srpToRupiah(product.srp) : null,
+    addons: intentAddons,
+    addon_total: addonTotal,
+    estimated_total: product.hargaTersedia ? srpToRupiah(product.srp) + addonTotal : null,
+  });
 
   const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 

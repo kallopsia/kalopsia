@@ -89,12 +89,13 @@ npm run start
 │   ├── addons.ts, admin-addons.ts, addon-labels.ts  # Add-on anti gores (baca, simpan, label)
 │   ├── screen-category.ts      # Deteksi kategori layar 14/15/16 dari teks spesifikasi (murni)
 │   ├── product-screen.ts       # Akses server-only product_screen_info (admin-only RLS)
+│   ├── order-intents.ts        # Snapshot harga saat klik WA (tabel order_intents, admin-only)
 │   ├── slug.ts, service-schema.ts, product-schema.ts  # Validasi zod + slug URL
 │   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, harga jasa (rupiah penuh)
 ├── scripts/seed-from-xlsx.ts   # npm run db:seed
 ├── scripts/strip-kode-prefix.ts # Migrasi sekali-jalan: buang prefix PR-LAP-<BRAND>-
 ├── scripts/backfill-screen-category.ts # Backfill kategori layar (dry-run default, --apply)
-├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info + RLS
+├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info, order_intents + RLS
 └── docs/SETUP.md               # Panduan setup & alur kerja bulanan
 ```
 
@@ -132,8 +133,15 @@ npm run start
 - **Nama produk**: kolom `nama_produk` opsional diisi dari admin (`/admin/products` → Ubah).
   Selama kosong, judul kartu & halaman detail fallback ke teks spesifikasi (perilaku lama).
 - **Add-on anti gores**: tabel `product_addons` (body/layar × matte/glossy, harga rupiah penuh)
-  diatur di `/admin/addons`. Di halaman produk muncul sebagai accordion opsional; pilihan
-  pembeli (maksimal satu per kategori) ikut masuk pesan WhatsApp beserta estimasi totalnya.
+  diatur di `/admin/addons`. Setiap add-on punya harga **default (fallback)** plus harga per
+  ukuran layar **14"/15"/16"**; halaman produk otomatis memakai harga sesuai kategori layar
+  produk (konsumen hanya melihat angka, bukan label ukurannya). Bila produk belum terkategori
+  atau harga ukurannya 0, jatuh ke harga default. Di halaman produk add-on muncul sebagai
+  accordion opsional; pilihan pembeli (maksimal satu per kategori) ikut masuk pesan WhatsApp
+  beserta estimasi totalnya.
+- **Order intent**: setiap klik tombol WhatsApp (`/api/wa`) dicatat ke tabel `order_intents`
+  (service role, RLS admin-only) berisi snapshot harga produk + add-on pada saat transaksi.
+  Lihat riwayat di `/admin/orders`. Ini jejak minat beli, bukan pembayaran.
 - **Kategori layar (admin-only)**: ukuran 14"/15"/16" disimpan di tabel `product_screen_info`
   yang RLS-nya admin-only total, jadi **tidak pernah** bocor ke pengunjung maupun API publik
   Supabase. Kategori dideteksi otomatis dari teks spesifikasi (`lib/screen-category.ts`,
@@ -141,7 +149,7 @@ npm run start
   atau "reset ke otomatis" di halaman ubah produk, memfilter daftar produk per ukuran, dan
   mengkategorikan ulang semua produk sekaligus. Produk yang tak terdeteksi ditandai "belum
   terkategori". Backfill massal: `npx tsx scripts/backfill-screen-category.ts` (dry-run;
-  tambah `--apply` untuk menyimpan). Kategori ini nantinya mencocokkan harga add-on per ukuran.
+  tambah `--apply` untuk menyimpan). Kategori ini dipakai mencocokkan harga add-on per ukuran.
 - **Test**: `npm test` menjalankan vitest (`tests/*.test.ts`), mencakup deteksi kategori layar.
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
   hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di

@@ -49,6 +49,7 @@ Jalankan semua file di `supabase/migrations/` **berurutan** (nama file = urutan 
 | `20261002000000_product_addons.sql` | Tabel `product_addons` (anti gores body/layar, matte/glossy) + seed 4 baris + RLS |
 | `20261003000000_add_nama_produk.sql` | Kolom `nama_produk` (judul tampilan, opsional) di `products` |
 | `20261004000000_product_screen_info.sql` | Tabel `product_screen_info` (kategori layar 14/15/16/belum, admin-only RLS) |
+| `20261005000000_addon_price_per_screen_and_order_intents.sql` | Kolom `harga_14/15/16` di `product_addons` + tabel `order_intents` (snapshot harga saat klik WA) |
 
 Isi `20260928000000_init.sql`:
 
@@ -257,7 +258,8 @@ Halaman penting:
 | `/admin/install-ulang` | Ubah biaya & deskripsi jasa install ulang Windows |
 | `/admin/software` | CRUD jasa install software (gambar via Cloudinary) |
 | `/admin/sparepart` | CRUD sparepart (gambar via Cloudinary) |
-| `/admin/addons` | Ubah harga & status aktif 4 kombinasi add-on anti gores |
+| `/admin/addons` | Ubah harga add-on anti gores: default (fallback) + per ukuran layar 14"/15"/16" + status aktif |
+| `/admin/orders` | Riwayat order intent: snapshot harga produk & add-on tiap klik tombol WhatsApp |
 
 Semua route `/admin/*` dijaga `middleware.ts` (cek sesi cookie) **dan** dicek ulang di
 server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/login`.

@@ -1,5 +1,6 @@
 import { cache } from "react";
-import type { AddonKategori, AddonTipe, ProductAddonRow } from "@/types/addon";
+import type { AddonKategori, AddonTipe, ProductAddonRow, ResolvedAddon } from "@/types/addon";
+import type { ScreenCategory } from "@/lib/screen-category";
 import { getSupabaseReadClient } from "@/lib/supabase/server";
 import { getSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -18,7 +19,44 @@ function normalizeRows(rows: unknown): ProductAddonRow[] {
   return ((rows || []) as ProductAddonRow[]).map((row) => ({
     ...row,
     harga: Number(row.harga) || 0,
+    harga_14: Number(row.harga_14) || 0,
+    harga_15: Number(row.harga_15) || 0,
+    harga_16: Number(row.harga_16) || 0,
   }));
+}
+
+// Harga add-on untuk ukuran layar tertentu. Bila harga ukuran belum ditetapkan
+// (0) atau produk belum terkategori, jatuh ke harga default (fallback).
+export function resolveAddonPrice(
+  addon: ProductAddonRow,
+  kategoriLayar: ScreenCategory
+): { harga: number; fallback: boolean } {
+  const sizePrice =
+    kategoriLayar === "14"
+      ? addon.harga_14
+      : kategoriLayar === "15"
+        ? addon.harga_15
+        : kategoriLayar === "16"
+          ? addon.harga_16
+          : 0;
+  if (sizePrice > 0) return { harga: sizePrice, fallback: false };
+  return { harga: addon.harga, fallback: true };
+}
+
+export function resolveAddonsForScreen(
+  addons: ProductAddonRow[],
+  kategoriLayar: ScreenCategory
+): ResolvedAddon[] {
+  return addons.map((addon) => {
+    const resolved = resolveAddonPrice(addon, kategoriLayar);
+    return {
+      id: addon.id,
+      kategori: addon.kategori,
+      tipe: addon.tipe,
+      harga: resolved.harga,
+      fallback: resolved.fallback,
+    };
+  });
 }
 
 // Add-on aktif untuk storefront. Gagal baca (mis. migrasi belum dijalankan)

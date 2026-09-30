@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getProductBySlug, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
-import { getActiveAddons } from "@/lib/addons";
+import { getActiveAddons, resolveAddonsForScreen } from "@/lib/addons";
+import { getScreenInfo } from "@/lib/product-screen";
 import { formatSrp } from "@/lib/pricing";
 import ProductGallery from "@/components/ProductGallery";
 import ProductPurchaseSection from "@/components/ProductPurchaseSection";
@@ -36,6 +37,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   const addons = await getActiveAddons();
+  // Kategori layar dibaca server-side (service role) hanya untuk memilih harga
+  // add-on yang benar; label kategorinya tidak pernah dikirim ke client.
+  const screenInfo = await getScreenInfo(product.id);
+  const resolvedAddons = resolveAddonsForScreen(addons, screenInfo?.kategori ?? "belum");
 
   return (
     <div className="w-full flex-1 flex flex-col">
@@ -67,7 +72,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <ProductGallery images={product.gambar} productName={product.nama} />
             </div>
             <div>
-              <ProductPurchaseSection product={product} addons={addons} />
+              <ProductPurchaseSection product={product} addons={resolvedAddons} />
             </div>
           </div>
 

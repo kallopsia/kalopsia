@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/admin/software", label: "software" },
   { href: "/admin/sparepart", label: "sparepart" },
   { href: "/admin/addons", label: "add-on" },
+  { href: "/admin/orders", label: "pesanan" },
   { href: "/admin/import", label: "impor excel" },
 ];
 
