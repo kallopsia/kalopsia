@@ -6,7 +6,8 @@
 export const CLOUDINARY_FOLDER_PREFIX = "laptop";
 
 // Brand yang sudah tidak dijual: pemetaannya tidak diimpor dan foldernya
-// diabaikan saat sinkron (masuk daftar folder yatim, bukan sumber foto).
+// diabaikan saat sinkron (masuk daftar "folder brand dikecualikan", bukan
+// sumber foto dan bukan folder yatim).
 export type ExcludedBrand = {
   code: string;
   name: string;

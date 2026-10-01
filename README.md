@@ -52,9 +52,9 @@ npm run start
 
 ```text
 ├── app/
-│   ├── admin/                  # Area admin: login, ringkasan, produk, layanan, sparepart, impor Excel
+│   ├── admin/                  # Area admin: login, ringkasan, produk, layanan, sparepart, foto, impor Excel
 │   ├── api/
-│   │   ├── admin/              # API admin (produk, software, sparepart, layanan, impor) — service role hanya di server
+│   │   ├── admin/              # API admin (produk, software, sparepart, layanan, impor, foto) — service role hanya di server
 │   │   ├── auth/               # Login/logout Supabase Auth (@supabase/ssr)
 │   │   ├── cloudinary/sign/    # Tanda tangan signed upload (API secret tidak pernah ke client)
 │   │   └── wa/                 # Pembuat link WhatsApp (nomor penjual tersembunyi di server)
@@ -68,7 +68,7 @@ npm run start
 │   ├── page.tsx                # Landing page: 8 produk is_featured, pola grid 3-1-3-1
 │   └── layout.tsx              # Root layout, JetBrains Mono, Header & Footer
 ├── components/
-│   ├── admin/                  # Komponen area admin (form produk/software/sparepart, impor, gambar, toast)
+│   ├── admin/                  # Komponen area admin (form produk/software/sparepart, impor, gambar, pemetaan & sinkron foto, toast)
 │   ├── Header.tsx              # Desktop: bar hitam -> hover expand; mobile: hamburger + panel
 │   ├── Footer.tsx              # contact / terms / copyright saja
 │   ├── LandingShowcase.tsx     # Grid landing foto-saja (trio + kartu lebar 21:9)
@@ -92,6 +92,14 @@ npm run start
 │   ├── color-config.ts         # Daftar 42 kode warna + peta alias kanonik (satu-satunya sumber)
 │   ├── color-category.ts       # Deteksi warna (longest-match, word-boundary) + kunci grup varian (murni)
 │   ├── product-color.ts        # Server-only: deteksi warna, override manual, regroup varian
+│   ├── photo-config.ts         # Prefix Cloudinary `laptop`, brand dikecualikan, parse kode brand
+│   ├── photo-file.ts           # Nama berkas 1.jpg/2.png…, sort numerik, batas 24 foto/produk
+│   ├── photo-mapping.ts        # Normalisasi + penggabungan sheet "Pemetaan SKU" ke produk
+│   ├── photo-mapping-parser.ts # Baca xlsx/CSV pemetaan (kolom KODEBARANG + folder/URL foto)
+│   ├── photo-sync.ts           # Engine sinkron: plan dry-run, folder kosong, yatim, foto basi
+│   ├── cloudinary-admin.ts     # Admin API List-Resources via fetch (kredensial hanya di server)
+│   ├── photo-url.ts            # URL f_auto,q_auto dari public_id + merge foto manual/sync
+│   ├── admin-photos.ts, admin-photo-mapping.ts # CRUD server-side tabel foto & pemetaan
 │   ├── order-intents.ts        # Snapshot harga saat klik WA (tabel order_intents, admin-only)
 │   ├── slug.ts, service-schema.ts, product-schema.ts  # Validasi zod + slug URL
 │   └── pricing.ts              # SRP (ribuan rupiah) → Rupiah, harga jasa (rupiah penuh)
@@ -99,7 +107,9 @@ npm run start
 ├── scripts/strip-kode-prefix.ts # Migrasi sekali-jalan: buang prefix PR-LAP-<BRAND>-
 ├── scripts/backfill-screen-category.ts # Backfill kategori layar (dry-run default, --apply)
 ├── scripts/regroup-products.ts # Deteksi warna + kelompokkan varian (dry-run default, --apply)
-├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info, order_intents + kolom varian (stok/warna/grup) + RLS
+├── scripts/import-photo-mapping.ts # Impor sheet Pemetaan SKU (dry-run default, --apply)
+├── scripts/sync-photos.ts      # Sinkron foto Cloudinary (dry-run default, --apply/--overwrite)
+├── supabase/migrations/        # Skema products, import_logs, software_services, spareparts, services_windows_install, product_addons, product_screen_info, order_intents, product_photo_folders + product_photos, kolom varian (stok/warna/grup) + RLS
 └── docs/SETUP.md               # Panduan setup & alur kerja bulanan
 ```
 
@@ -117,6 +127,22 @@ npm run start
   Nomor WhatsApp hanya ada di server via `/api/wa`.
 - **Gambar Cloudinary**: unggah lewat form admin (unsigned preset atau signed upload)
   atau tempel URL `https://res.cloudinary.com/<CLOUD_NAME>/...`; gambar pertama = utama.
+- **Sinkron foto Cloudinary** (`/admin/photos`): sumber kebenaran pemetaan adalah sheet
+  **`Pemetaan SKU`** di Excel foto (kolom `KODEBARANG` + nama folder) — sistem **tidak pernah**
+  menebak folder dari kode barang atau nama produk. Satu folder bisa melayani banyak SKU, dan
+  satu SKU bisa di-override manual ke folder lain. Foto diharapkan berada di
+  `laptop/<Nama Folder>/1.jpg`, `2.jpg`, dst. (jpg/jpeg/png/webp, urut numerik, file `1` = utama,
+  maksimal 24 foto per produk; berkas non-numerik dilewati dan dilaporkan). Brand
+  **GIGABYTE, SPC, TECNO, ZYREX** dikecualikan (`lib/photo-config.ts`). Hasil sinkron disimpan
+  sebagai `public_id` di tabel `product_photos` dan dirender dengan transformasi
+  `f_auto,q_auto`; **impor dan sinkron tidak pernah menyentuh `products.image_urls`** — foto
+  kurasi admin selalu tampil lebih dulu dan tidak ditimpa kecuali admin mencentang *timpa*.
+  Alur: impor pemetaan → **dry-run wajib** (melaporkan SKU terisi + jumlah foto, folder kosong /
+  belum dibuat, folder yatim, berkas dilewati) → simpan. Command line:
+  `npx tsx scripts/import-photo-mapping.ts "<file.xlsx>" [--apply]` dan
+  `npx tsx scripts/sync-photos.ts [--apply] [--overwrite] [--prefix <p>]`. Admin API Cloudinary
+  hanya dipanggil dari server (`/api/admin/photos/*` dijaga `requireAdmin()`); tanpa
+  `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` tombol sinkron tidak bisa dipakai.
 - **Landing page**: `/` menampilkan maksimal 8 produk ber-`is_featured = true` (kartu
   foto saja, pola 3-1-3-1) plus tombol "EXPLORE ALL PRODUCTS" ke `/shop`. Produk unggulan
   dipilih dari admin (checkbox "Tampilkan di landing page"); selama belum ada yang
@@ -166,8 +192,9 @@ npm run start
   **duplikat** (tidak digabung, perlu review; filter "duplikat warna" di daftar produk). Kolom
   `stok` (NULL = tidak dilacak/dianggap tersedia, 0 = habis). Grup dihitung ulang massal:
   `npx tsx scripts/regroup-products.ts` (dry-run; tambah `--apply` untuk menyimpan).
-- **Test**: `npm test` menjalankan vitest (`tests/*.test.ts`), mencakup deteksi kategori layar
-  dan deteksi warna (longest-match, word-boundary, alias, kunci grup varian).
+- **Test**: `npm test` menjalankan vitest (`tests/*.test.ts`), mencakup deteksi kategori layar,
+  deteksi warna (longest-match, word-boundary, alias, kunci grup varian), nama/sort berkas foto,
+  pemetaan SKU→folder, URL/merge foto, Admin API Cloudinary (fetch di-stub), dan engine sinkron.
 - **Deploy (Vercel dll.)**: tambahkan semua variabel di `.env.example` ke dashboard
   hosting, lalu deploy seperti proyek Next.js biasa. Jalankan migrasi di
   `supabase/migrations/` sebelum/sesudah deploy (menambah kolom/tabel aman bagi kode lama).

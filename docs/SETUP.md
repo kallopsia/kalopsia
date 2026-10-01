@@ -2,7 +2,8 @@
 
 Dokumen ini menjelaskan cara menjalankan proyek dari nol: membuat database Supabase,
 menjalankan migrasi SQL, membuat user admin pertama, menyiapkan Cloudinary, mengisi
-data awal dari Excel, dan alur kerja bulanan memperbarui katalog.
+data awal dari Excel, mengisi foto produk dari folder Cloudinary, dan alur kerja
+bulanan memperbarui katalog.
 
 Stack: Next.js 14 (App Router) + TypeScript + Tailwind + Supabase (Postgres + Auth + RLS)
 + Cloudinary (gambar produk) + SheetJS `xlsx` (parsing Excel).
@@ -15,6 +16,8 @@ Stack: Next.js 14 (App Router) + TypeScript + Tailwind + Supabase (Postgres + Au
 - Akun [Supabase](https://supabase.com)
 - Akun [Cloudinary](https://cloudinary.com) (opsional, tapi dibutuhkan untuk mengunggah gambar)
 - File Excel katalog, contoh: `PL_26_SEPT.xlsx` (sheet `LAPTOP`)
+- File Excel pemetaan foto, contoh: `Daftar_Folder_Foto_Laptop.xlsx` (sheet `Pemetaan SKU`)
+  — hanya kalau mau mengisi foto massal (lihat bagian 7)
 
 Lalu pasang dependency:
 
@@ -51,6 +54,7 @@ Jalankan semua file di `supabase/migrations/` **berurutan** (nama file = urutan 
 | `20261004000000_product_screen_info.sql` | Tabel `product_screen_info` (kategori layar 14/15/16/belum, admin-only RLS) |
 | `20261005000000_addon_price_per_screen_and_order_intents.sql` | Kolom `harga_14/15/16` di `product_addons` + tabel `order_intents` (snapshot harga saat klik WA) |
 | `20261006000000_product_variants.sql` | Kolom varian di `products`: `stok`, `warna_kode`, `warna_canon`, `warna_source`, `group_slug`, `duplikat_warna` + index |
+| `20261007000000_product_photos.sql` | Tabel `product_photo_folders` (pemetaan SKU→folder, admin-only RLS) + `product_photos` (`public_id`, posisi, folder, sumber) + index |
 
 Isi `20260928000000_init.sql`:
 
@@ -151,6 +155,9 @@ Ada dua mode unggah, pilih salah satu:
    ```
 3. Admin akan otomatis memakai signed upload melalui endpoint `/api/cloudinary/sign`.
    `CLOUDINARY_API_SECRET` hanya dibaca di server dan tidak pernah dikirim ke browser.
+4. Mode signed **wajib** kalau mau memakai **sinkron foto massal** (bagian 7): halaman
+   `/admin/photos` memanggil Cloudinary Admin API untuk mendaftar folder/aset, dan itu
+   butuh `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`.
 
 Validasi URL: form admin hanya menerima URL `https://res.cloudinary.com/<CLOUD_NAME>/...`,
 sehingga tidak bisa disisipi domain gambar lain.
@@ -224,10 +231,101 @@ admin: `/admin/products` → **Ubah** → bagian *Gambar produk* → unggah file
 Cloudinary, lalu atur urutan (gambar pertama = gambar utama).
 
 Impor Excel tidak pernah menyentuh `image_urls`; gambar hanya dikelola dari admin.
+Untuk mengisi foto banyak SKU sekaligus, gunakan sinkron dari folder Cloudinary
+(bagian 7) alih-alih satu-satu.
 
 ---
 
-## 7. Menjalankan aplikasi
+## 7. Mengisi foto produk dari Cloudinary
+
+Untuk katalog dengan ratusan SKU, foto diisi massal dari folder Cloudinary, bukan satu-satu
+lewat form. Halaman **Foto** (`/admin/photos`) membaca pemetaan **SKU → folder** dan menuliskan
+hasilnya sebagai `public_id` ke tabel `product_photos`.
+
+Yang perlu diketahui sebelum mulai:
+
+- **Sumber kebenaran pemetaan** adalah sheet `Pemetaan SKU` (kolom A `KODEBARANG`, kolom B
+  `Nama Folder`) — contoh `Daftar_Folder_Foto_Laptop.xlsx`. Sistem **tidak pernah** menebak
+  folder dari kode barang atau nama produk.
+- **Satu folder boleh dipakai banyak SKU** (mis. warna berbeda dengan foto sama).
+- **Struktur folder** di Cloudinary: `{PREFIX}/{Nama Folder}/1.jpg`, `2.jpg`, …
+  dengan `PREFIX = laptop` (konstanta `CLOUDINARY_FOLDER_PREFIX` di `lib/photo-config.ts`).
+- **Format & urutan**: jpg/jpeg/png/webp, diurutkan numerik (1, 2, 10 — bukan leksikografis),
+  file `1` = foto utama. Maksimal **24 foto per produk**; berkas di atas batas atau bernama
+  non-numerik (mis. `pola.jpg`) **dilewati dan dilaporkan**, tidak membuat sinkron gagal.
+- **Pencocokan folder** tidak peka besar/kecil dan mengabaikan spasi berlebih; yang dibandingkan
+  adalah segmen folder terdalam, jadi `laptop/PR-LAP-AC-A715` di Cloudinary cocok dengan
+  `PR-LAP-AC-A715` di sheet.
+- **Brand dikecualikan**: GIGABYTE, SPC, TECNO, ZYREX (`EXCLUDED_BRANDS` di
+  `lib/photo-config.ts`). Pemetaannya tidak diimpor dan foldernya tidak dijadikan sumber foto.
+- **Aman untuk kurasi admin**: sinkron **hanya** menulis `product_photos`. Kolom
+  `products.image_urls` (foto yang diunggah manual di `/admin/products`) tidak pernah diubah;
+  foto manual selalu tampil lebih dulu dan tidak ditimpa kecuali admin mencentang
+  **timpa SKU yang sudah punya foto manual**.
+- **Prasyarat**: migrasi `20261007000000_product_photos.sql` sudah jalan dan
+  `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET` terisi — Admin API hanya dipanggil dari
+  server (`/api/admin/photos/*`, dijaga `requireAdmin()`), kredensial tidak pernah ke browser.
+
+### Alur lewat halaman admin
+
+1. Login → **Foto** (`/admin/photos`).
+2. **Impor pemetaan**: unggah `.xlsx` (sheet `Pemetaan SKU`) atau `.csv` cadangan berheader
+   `kodebarang,url_foto`, klik **periksa dulu**. Preview menampilkan jumlah baris terbaca,
+   SKU yang cocok / tidak dikenal, folder duplikat, dan peringatan. Klik **simpan** untuk
+   menulis ke `product_photo_folders`.
+3. Bila perlu, ubah folder per SKU (kolom **ubah**) atau tambahkan SKU manual
+   (**tambah sku manual**). Hapus baris untuk melepas pemetaan.
+4. **Sinkron**: periksa prefix folder (default `laptop`) lalu klik **jalankan dry-run**.
+   Wajib dibaca dulu — dry-run tidak menulis apa pun dan melaporkan:
+   - **(a) akan disimpan** — hanya SKU ber-aksi `fill`/`update`: folder, jumlah foto,
+     badge `−n lama` bila ada baris sinkron yang akan dibuang, dan pratinjau foto (layar
+     memotong ke 100 baris, script ke 60 baris + angka lengkap di ringkasan). SKU yang sudah
+     cocok (`sudah cocok`), terlindungi karena foto manual tanpa *timpa* (`dilindungi`), atau
+     tidak punya foto (`tanpa foto`) tidak masuk daftar ini;
+   - **(b) folder kosong** — folder pemetaan yang ada tapi isinya nol, atau yang belum dibuat
+     sama sekali;
+   - **foto basi** — SKU yang foldernya kini kosong padahal masih menyimpan baris hasil
+     sinkron lama (barisnya **tidak** dihapus otomatis, perlu keputusan admin);
+   - **(c) folder yatim** — folder di Cloudinary yang berisi foto tapi tidak ditunjuk SKU mana
+     pun, beserta folder brand yang dikecualikan;
+   - **(d) berkas dilewati** — nama tidak sesuai pola + berkas yang melebihi batas 24 foto.
+5. Klik **simpan hasil** (hanya aktif bila dry-run menemukan sesuatu yang perlu ditulis).
+   Sistem mengganti baris `sumber='sync'` per SKU, memanggil `revalidateTag('products')`,
+   lalu katalog langsung memakai foto baru.
+
+Menjalankan dry-run dua kali berturut-turut menghasilkan **0 yang perlu disimpan** (idempoten).
+
+### Alur lewat command line
+
+```bash
+# 1. impor pemetaan SKU → folder (dry-run default)
+npx tsx scripts/import-photo-mapping.ts "C:/Users/<kamu>/Downloads/Daftar_Folder_Foto_Laptop.xlsx"
+npx tsx scripts/import-photo-mapping.ts "…/Daftar_Folder_Foto_Laptop.xlsx" --apply
+
+# 2. sinkron foto (dry-run default, tanpa --apply tidak ada yang ditulis)
+npx tsx scripts/sync-photos.ts
+npx tsx scripts/sync-photos.ts --apply
+npx tsx scripts/sync-photos.ts --apply --overwrite   # termasuk SKU berfoto manual
+npx tsx scripts/sync-photos.ts --prefix laptop       # kalau struktur folder berubah
+```
+
+Script memuat `.env.local` (atau `.env`) dari root proyek dan memakai paginasi
+`next_cursor` Admin API, jadi ribuan aset tetap terbaca.
+
+### Perilaku di sisi pengunjung
+
+- Storefront mengambil semua baris `product_photos` dalam **satu query** lalu menggabungkannya
+  dengan `image_urls` di JS (`lib/products.ts`, `mergeProductPhotos`). Kalau tabel belum ada
+  (migrasi belum jalan), katalog tetap tampil — hanya ada satu peringatan di log server.
+- Foto dirender dengan transformasi `f_auto,q_auto` (`lib/photo-url.ts`), `sizes` responsif per
+  komponen, dan `loading="lazy"` kecuali foto utama. Varian warna otomatis memakai foto
+  SKU-nya sendiri saat pembeli memilih warna.
+- SKU yang tidak punya foto sama sekali menampilkan **placeholder** (SVG teks nama produk di
+  atas latar #EDEDED), bukan gambar produk lain.
+
+---
+
+## 8. Menjalankan aplikasi
 
 ```bash
 npm run dev      # http://localhost:3000
@@ -259,6 +357,7 @@ Halaman penting:
 | `/admin/install-ulang` | Ubah biaya & deskripsi jasa install ulang Windows |
 | `/admin/software` | CRUD jasa install software (gambar via Cloudinary) |
 | `/admin/sparepart` | CRUD sparepart (gambar via Cloudinary) |
+| `/admin/photos` | Impor pemetaan SKU→folder (`Pemetaan SKU` / CSV), override folder per SKU, dry-run sinkron foto Cloudinary, simpan hasil |
 | `/admin/addons` | Ubah harga add-on anti gores: default (fallback) + per ukuran layar 14"/15"/16" + status aktif |
 | `/admin/orders` | Riwayat order intent: snapshot harga produk & add-on tiap klik tombol WhatsApp |
 
@@ -267,7 +366,7 @@ server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/lo
 
 ---
 
-## 8. Alur kerja bulanan memperbarui katalog
+## 9. Alur kerja bulanan memperbarui katalog
 
 1. Terima file Excel baru dari distributor (mis. `PL_OKT.xlsx`).
 2. Login ke `/admin/login`.
@@ -283,17 +382,21 @@ server lewat `requireAdmin()`. Tanpa role admin, request diarahkan ke `/admin/lo
    - **Error baris** — baris yang ditolak (kode kosong, duplikat, spesifikasi kosong, SRP tidak valid).
 6. Klik **Terapkan Perubahan**. Sistem melakukan upsert per batch 500 baris, menulis
    `import_logs`, dan memanggil `revalidateTag('products')` supaya storefront langsung segar.
-7. Cek `/admin/products` dan halaman toko untuk memastikan hasilnya.
+7. Kalau ada SKU baru / folder foto baru: unggah foldernya ke Cloudinary
+   (`laptop/<Nama Folder>/1.jpg…`), perbarui sheet `Pemetaan SKU`, impor pemetaanannya,
+   lalu jalankan **dry-run** sinkron foto sebelum menyimpan (bagian 7).
+8. Cek `/admin/products` dan halaman toko untuk memastikan hasilnya.
 
 **Penting:** impor Excel **tidak pernah** menyentuh kolom `image_urls`. Gambar yang sudah
 diunggah lewat admin tetap utuh walaupun produknya diperbarui dari Excel. Kolom `M1` dan
-`M1 vs LAMA` juga tidak pernah disimpan.
+`M1 vs LAMA` juga tidak pernah disimpan. Sinkron foto juga tidak menyentuh `image_urls` —
+ia hanya menulis tabel `product_photos`.
 
 **Idempoten:** mengimpor file yang sama dua kali menghasilkan **0 perubahan**.
 
 ---
 
-## 9. Aturan harga SRP
+## 10. Aturan harga SRP
 
 - Nilai `SRP` di Excel dalam satuan **ribuan rupiah**. Contoh: `17999` = Rp 17.999.000.
 - Database menyimpan angka mentah (`srp numeric`).
@@ -306,7 +409,7 @@ diunggah lewat admin tetap utuh walaupun produknya diperbarui dari Excel. Kolom 
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Gejala | Penyebab & solusi |
 | --- | --- |
@@ -316,16 +419,27 @@ diunggah lewat admin tetap utuh walaupun produknya diperbarui dari Excel. Kolom 
 | Impor gagal `Kolom wajib tidak ditemukan: KODEBARANG` | Baris header bukan baris pertama, atau nama kolom berbeda. Parser mencari baris yang memuat `KODEBARANG`. |
 | Semua harga tampil "Hubungi kami" | Kolom `SRP` kosong/0 di Excel. Isi SRP lalu impor ulang. |
 | Upload gambar gagal | Cloudinary belum dikonfigurasi, atau preset unsigned salah nama, atau `CLOUDINARY_API_SECRET` belum diisi untuk mode signed. |
+| Halaman `/admin/photos` banner merah "tabel belum ada" | Migrasi `20261007000000_product_photos.sql` belum dijalankan di Supabase. |
+| Dry-run foto: semua folder "belum dibuat" / 0 aset | Foto belum diunggah ke bawah prefix `laptop`, atau `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` salah (Admin API menolak). Cek `report.warnings` di layar atau output script. |
+| SKU tertentu tidak dapat foto padahal foldernya ada | Nama folder dibandingkan pada **segmen terdalam** (huruf kecil, spasi berlebih diabaikan), jadi sheet harus menunjuk folder yang sama dengan yang ada di Cloudinary. Cek juga brand dikecualikan (GIGABYTE/SPC/TECNO/ZYREX) dan nama berkas: harus `1.jpg`, `2.png`, … bukan `foto-1.jpg`. |
+| Foto sinkron tidak muncul padahal sudah disimpan | Cache Next: simpan sudah memanggil `revalidateTag('products')`; tunggu maksimal 1 jam di produksi (`PRODUCTS_REVALIDATE_SECONDS = 3600`) atau restart dev server. |
 | Perubahan admin tidak muncul di toko | Cache Next. Impor/edit sudah memanggil `revalidateTag`; tunggu maksimal 1 jam (`PRODUCTS_REVALIDATE_SECONDS = 3600`) atau restart server dev. |
 | `npm run db:seed` gagal `.env.local tidak ditemukan` | Jalankan dari root proyek, atau ekspor env secara manual sebelum menjalankan script. |
 
 ---
 
-## 11. Keamanan
+## 12. Keamanan
 
 - `SUPABASE_SERVICE_ROLE_KEY` dan `CLOUDINARY_API_SECRET` hanya dibaca proses server.
+- Cloudinary **Admin API** (daftar aset & subfolder untuk sinkron foto) dipanggil dari
+  `lib/cloudinary-admin.ts` lewat route `/api/admin/photos/*` yang dijaga `requireAdmin()`.
+  Browser tidak pernah menerima API key/secret, dan hasil daftar aset hanya berupa
+  `public_id` yang disimpan ke `product_photos`.
 - RLS aktif di semua tabel: anon hanya bisa membaca `products` dengan `is_active = true`;
   tulis/hapus hanya untuk role admin. `import_logs` hanya bisa dibaca admin.
+- `product_photos` bisa dibaca publik **hanya** untuk produk aktif; `product_photo_folders`
+  (pemetaan SKU→folder) admin-only total, jadi struktur folder Cloudinary tidak bocor ke
+  pengunjung.
 - `Content-Security-Policy` di `next.config.js` membatasi `connect-src` ke origin Supabase
   dan Cloudinary, serta `img-src` ke `res.cloudinary.com`.
 - Nomor WhatsApp penjual hanya ada di server (`WHATSAPP_NUMBER`), redirect dilakukan

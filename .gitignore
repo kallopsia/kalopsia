@@ -24,6 +24,7 @@ yarn-error.log*
 
 # local env files — semua .env diabaikan kecuali .env.example
 .env*
+!.env.example
 
 # spreadsheet sumber (berisi data internal, jangan ikut ke repo)
 *.xlsx
