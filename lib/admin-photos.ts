@@ -2,9 +2,9 @@
 // Admin API (hanya di sini, tidak pernah dari frontend), lalu tulis hasilnya.
 
 import { getSupabaseServiceClient } from "./supabase/service";
-import { listPhotoMapping, readPhotoMappingRows } from "./admin-photo-mapping";
+import { readPhotoMappingRows } from "./admin-photo-mapping";
 import { joinMappingToProducts, type PhotoMappingRow } from "./photo-mapping";
-import { CLOUDINARY_FOLDER_PREFIX, isExcludedKodeBarang } from "./photo-config";
+import { CLOUDINARY_FOLDER_PREFIX } from "./photo-config";
 import {
   computePhotoSyncPlan,
   type ExistingPhoto,
@@ -24,27 +24,64 @@ type ProductPhotoSourceRow = {
   image_urls: string[] | null;
 };
 
-export type PhotoMappingSummary = {
-  stored: number;
-  folders: number;
-  excluded: number;
+export type PhotoStats = {
+  // Baris hasil sinkron vs kurasi manual di product_photos.
+  syncRows: number;
+  manualRows: number;
+  skusWithPhotos: number;
+  lastSyncedAt: string | null;
+  // Produk yang sudah punya pemetaan folder tapi belum punya foto sinkron.
+  skusMapped: number;
+  skusWithoutAnyPhoto: number;
 };
 
-export async function photoMappingSummary(): Promise<PhotoMappingSummary> {
-  const rows = await listPhotoMapping();
-  const folders = new Set(rows.map((row) => row.folder.trim().toLowerCase()));
-  const excluded = rows.filter((row) => isExcludedKodeBarang(row.kode_barang)).length;
-  return { stored: rows.length, folders: folders.size, excluded };
+type ExistingPhotoRow = ExistingPhoto & { synced_at: string | null };
+
+// Angka-angka kecil untuk kartu ringkasan di halaman admin.
+export async function photoStats(): Promise<PhotoStats> {
+  const [photos, products] = await Promise.all([loadExistingPhotos(), loadProductsForPhotos()]);
+  const rows = await readPhotoMappingRows();
+  const mappedIds = new Set(
+    joinMappingToProducts(
+      rows,
+      products.map((product) => ({ id: product.id, kode_barang: product.kode_barang }))
+    ).targets.map((target) => target.productId)
+  );
+
+  const withPhotos: Record<string, true> = {};
+  let syncRows = 0;
+  let manualRows = 0;
+  let lastSyncedAt: string | null = null;
+  photos.forEach((row) => {
+    withPhotos[row.product_id] = true;
+    if (row.sumber === "manual") manualRows += 1;
+    else syncRows += 1;
+    if (row.synced_at && (!lastSyncedAt || row.synced_at > lastSyncedAt)) {
+      lastSyncedAt = row.synced_at;
+    }
+  });
+
+  return {
+    syncRows,
+    manualRows,
+    skusWithPhotos: Object.keys(withPhotos).length,
+    lastSyncedAt,
+    skusMapped: mappedIds.size,
+    skusWithoutAnyPhoto: products.filter(
+      (product) => !withPhotos[product.id] && (product.image_urls || []).length === 0
+    ).length,
+  };
+}
+
+async function loadProductsForPhotos(): Promise<ProductPhotoSourceRow[]> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase.from("products").select("id,kode_barang,image_urls");
+  if (error) throw new Error(`Gagal membaca produk: ${error.message}`);
+  return (data || []) as ProductPhotoSourceRow[];
 }
 
 async function loadTargets(rows: PhotoMappingRow[]): Promise<SyncTarget[]> {
-  const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,kode_barang,image_urls");
-  if (error) throw new Error(`Gagal membaca produk: ${error.message}`);
-
-  const products = (data || []) as ProductPhotoSourceRow[];
+  const products = await loadProductsForPhotos();
   const manualCountById: Record<string, number> = {};
   products.forEach((product) => {
     manualCountById[product.id] = (product.image_urls || []).filter(Boolean).length;
@@ -61,25 +98,32 @@ async function loadTargets(rows: PhotoMappingRow[]): Promise<SyncTarget[]> {
   }));
 }
 
-async function loadExistingPhotos(): Promise<ExistingPhoto[]> {
+async function loadExistingPhotos(): Promise<ExistingPhotoRow[]> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("product_photos")
-    .select("product_id,public_id,posisi,sumber");
+    .select("product_id,public_id,posisi,sumber,synced_at");
   if (error) {
     throw new Error(
       `Gagal membaca product_photos: ${error.message}. ` +
         `Pastikan migrasi 20261007000000_product_photos.sql sudah dijalankan.`
     );
   }
-  return ((data || []) as { product_id: string; public_id: string; posisi: number; sumber: string }[]).map(
-    (row) => ({
-      product_id: row.product_id,
-      public_id: row.public_id,
-      posisi: row.posisi,
-      sumber: row.sumber === "manual" ? "manual" : "sync",
-    })
-  );
+  return (
+    (data || []) as {
+      product_id: string;
+      public_id: string;
+      posisi: number;
+      sumber: string;
+      synced_at: string | null;
+    }[]
+  ).map((row) => ({
+    product_id: row.product_id,
+    public_id: row.public_id,
+    posisi: row.posisi,
+    synced_at: row.synced_at,
+    sumber: row.sumber === "manual" ? "manual" : ("sync" as const),
+  }));
 }
 
 export type PhotoSyncSource = {

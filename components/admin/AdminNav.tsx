@@ -8,6 +8,7 @@ import { useToast } from "./Toast";
 const NAV_ITEMS = [
   { href: "/admin", label: "ringkasan" },
   { href: "/admin/products", label: "produk" },
+  { href: "/admin/photos", label: "foto" },
   { href: "/admin/install-ulang", label: "install ulang" },
   { href: "/admin/software", label: "software" },
   { href: "/admin/sparepart", label: "sparepart" },

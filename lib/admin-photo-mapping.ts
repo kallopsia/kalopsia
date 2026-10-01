@@ -122,6 +122,28 @@ export async function listPhotoMapping(): Promise<ProductPhotoFolderRow[]> {
   return (data || []) as ProductPhotoFolderRow[];
 }
 
+// Ringkasan + isi tabel pemetaan untuk halaman admin.
+export type PhotoMappingAdminPayload = {
+  rows: ProductPhotoFolderRow[];
+  stored: number;
+  folders: number;
+  manual: number;
+  excluded: number;
+};
+
+export async function photoMappingRowsForAdmin(): Promise<PhotoMappingAdminPayload> {
+  const rows = await listPhotoMapping();
+  const folderKeys = new Set<string>();
+  let manual = 0;
+  let excluded = 0;
+  rows.forEach((row) => {
+    folderKeys.add(row.folder.trim().toLowerCase());
+    if (row.sumber === "manual") manual += 1;
+    if (isExcludedKodeBarang(row.kode_barang)) excluded += 1;
+  });
+  return { rows, stored: rows.length, folders: folderKeys.size, manual, excluded };
+}
+
 // Override folder per SKU (FITUR 5) — ubah satu baris pemetaan.
 export async function setSkuFolder(
   kode_barang: string,
