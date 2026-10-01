@@ -11,7 +11,7 @@ import {
   type PhotoSyncReport,
   type SyncTarget,
 } from "./photo-sync";
-import { listChildFolders, listImageAssets, type CloudinaryAsset } from "./cloudinary-admin";
+import { listDescendantFolders, listImageAssets, type CloudinaryAsset } from "./cloudinary-admin";
 
 export type { PhotoSyncReport };
 
@@ -138,7 +138,9 @@ export async function fetchCloudinarySource(prefix = CLOUDINARY_FOLDER_PREFIX): 
   let folders: string[] = [];
   let folderFetchFailed: string | null = null;
   try {
-    folders = await listChildFolders(prefix);
+    // Dua tingkat: `laptop/<brand>/<folder SKU>` — cukup untuk menandai folder
+    // yang sudah dibuat tapi masih kosong.
+    folders = await listDescendantFolders(prefix);
   } catch (error) {
     // Daftar folder hanya memperkaya laporan folder yatim.
     folderFetchFailed = error instanceof Error ? error.message : String(error);

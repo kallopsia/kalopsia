@@ -8,6 +8,9 @@ const ADMIN_API_VERSION = "v1_1";
 const PAGE_SIZE = 500;
 // Pengaman agar listing tidak pernah berputar terus-menerus kalau cursor macet.
 const MAX_PAGES = 200;
+// Batas jumlah folder per tingkat sebelum berhenti menelusuri lebih dalam,
+// supaya penelusuran folder tidak meledak jadi ratusan request.
+const MAX_DESCEND_BREADTH = 50;
 
 export type CloudinaryAdminConfig = {
   cloudName: string;
@@ -25,8 +28,11 @@ export type CloudinaryAsset = {
   format: string;
 };
 
-// Respon minimum yang dipakai requestPage — cukup untuk stub di test.
-export type FetchLike = (input: string, init?: { headers?: Record<string, string> }) => Promise<{
+// Respon minimum yang dipakai requestApi — cukup untuk stub di test.
+export type FetchLike = (
+  input: string,
+  init?: { headers?: Record<string, string>; method?: string; body?: string }
+) => Promise<{
   status: number;
   ok: boolean;
   json: () => Promise<Record<string, unknown>>;
@@ -65,31 +71,51 @@ function baseFileName(publicId: string, format: string): string {
   return format ? `${base}.${format}` : base;
 }
 
+function withFormat(name: string, format: string): string {
+  if (!name) return "";
+  return format ? `${name}.${format}` : name;
+}
+
+// Aset yang dipindah lewat Media Library tetap memakai public_id datar
+// (mis. "macbook_1"), sedangkan foldernya hanya ada di asset_folder dan nama
+// berkasnya di display_name. Karena itu folder & nama dibaca dari kedua field
+// itu dulu, baru diturunkan dari public_id sebagai cadangan.
 function toAsset(value: Record<string, unknown>): CloudinaryAsset | null {
   const publicId = String(value.public_id || "").trim();
   if (!publicId) return null;
   const format = String(value.format || "").trim().toLowerCase();
+  const assetFolder = String(value.asset_folder || "").trim();
+  const displayName = String(value.display_name || "").trim();
+  const folderPath = assetFolder || folderPathOf(publicId);
+
   return {
     publicId,
-    folderPath: folderPathOf(publicId),
-    folderKey: folderKeyOf(publicId),
-    fileName: baseFileName(publicId, format),
+    folderPath,
+    folderKey: normalizeFolderName(folderPath),
+    fileName: withFormat(displayName, format) || baseFileName(publicId, format),
     format,
   };
 }
 
-async function requestPage(
+async function requestApi(
   path: string,
-  params: Record<string, string | number>,
+  request: { query?: Record<string, string | number>; body?: Record<string, unknown> },
   config: CloudinaryAdminConfig,
   fetchImpl: FetchLike
 ): Promise<Record<string, unknown>> {
-  const query = Object.keys(params)
-    .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(params[key]))}`)
+  const query = Object.keys(request.query || {})
+    .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(request.query![key]))}`)
     .join("&");
-  const response = await fetchImpl(`${config.apiBase}${path}?${query}`, {
-    headers: { Authorization: config.authHeader },
-  });
+  const url = `${config.apiBase}${path}${query ? `?${query}` : ""}`;
+  const headers: Record<string, string> = { Authorization: config.authHeader };
+  const init: { headers: Record<string, string>; method?: string; body?: string } = { headers };
+  if (request.body) {
+    init.method = "POST";
+    init.body = JSON.stringify(request.body);
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetchImpl(url, init);
   const body: Record<string, unknown> = await response.json().catch(() => ({}));
   const error = body.error as { message?: string } | undefined;
   if (!response.ok) {
@@ -101,6 +127,14 @@ async function requestPage(
   return body;
 }
 
+// Ekspresi Search API: semua gambar di bawah prefix, rekursif. Folder dibaca
+// dari asset_folder sehingga aset hasil "pindah folder" di Media Library ikut
+// terbaca (public_id-nya tidak berubah saat dipindah).
+export function searchExpressionForPrefix(prefix: string): string {
+  const clean = (prefix || "").replace(/^\/+|\/+$/g, "").replace(/"/g, "");
+  return clean ? `folder:"${clean}*" AND resource_type:image` : "resource_type:image";
+}
+
 // Daftar seluruh gambar di bawah prefix (rekursif, termasuk subfolder),
 // dihalaman dengan next_cursor sampai habis.
 export async function listImageAssets(
@@ -109,26 +143,23 @@ export async function listImageAssets(
 ): Promise<CloudinaryAsset[]> {
   const config = options?.config ?? cloudinaryAdminConfig();
   const fetchImpl = options?.fetchImpl ?? (fetch as unknown as FetchLike);
-  const cleanPrefix = (prefix || "").replace(/^\/+|\/+$/g, "");
+  const expression = searchExpressionForPrefix(prefix);
 
   const assets: CloudinaryAsset[] = [];
   let cursor = "";
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const params: Record<string, string | number> = {
-      prefix: cleanPrefix ? `${cleanPrefix}/` : "",
-      max_results: PAGE_SIZE,
-    };
-    if (cursor) params.next_cursor = cursor;
+    const body: Record<string, unknown> = { expression, max_results: PAGE_SIZE };
+    if (cursor) body.next_cursor = cursor;
 
-    const body = await requestPage("/resources/image/upload", params, config, fetchImpl);
-    const list = (body.resources || []) as Record<string, unknown>[];
+    const response = await requestApi("/resources/search", { body }, config, fetchImpl);
+    const list = (response.resources || []) as Record<string, unknown>[];
     list.forEach((value) => {
       const asset = toAsset(value);
       if (asset) assets.push(asset);
     });
 
-    const next = body.next_cursor;
+    const next = response.next_cursor;
     if (!next || typeof next !== "string") break;
     cursor = next;
   }
@@ -150,12 +181,12 @@ export async function listChildFolders(
   let cursor = "";
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const params: Record<string, string | number> = { max_results: PAGE_SIZE };
-    if (cursor) params.next_cursor = cursor;
+    const query: Record<string, string | number> = { max_results: PAGE_SIZE };
+    if (cursor) query.next_cursor = cursor;
 
-    const body = await requestPage(
+    const body = await requestApi(
       `/folders/${encodeURIComponent(cleanPrefix)}`,
-      params,
+      { query },
       config,
       fetchImpl
     );
@@ -171,4 +202,33 @@ export async function listChildFolders(
   }
 
   return folders;
+}
+
+// Telusuri folder sampai `maxDepth` tingkat (default 2: `laptop/<brand>/<folder>`).
+// Penelusuran berhenti bila satu tingkat berisi terlalu banyak folder, supaya
+// tidak berubah jadi ratusan request.
+export async function listDescendantFolders(
+  prefix: string,
+  options?: { config?: CloudinaryAdminConfig; fetchImpl?: FetchLike; maxDepth?: number }
+): Promise<string[]> {
+  const maxDepth = options?.maxDepth ?? 2;
+  const cleanPrefix = (prefix || "").replace(/^\/+|\/+$/g, "");
+
+  const found: string[] = [];
+  let level: string[] = cleanPrefix ? [cleanPrefix] : [];
+
+  for (let depth = 0; depth < maxDepth && level.length > 0; depth += 1) {
+    if (level.length > MAX_DESCEND_BREADTH) break;
+    const next: string[] = [];
+    for (const path of level) {
+      const children = await listChildFolders(path, options);
+      children.forEach((child) => {
+        found.push(child);
+        next.push(child);
+      });
+    }
+    level = next;
+  }
+
+  return found;
 }

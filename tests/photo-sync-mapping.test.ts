@@ -133,6 +133,42 @@ describe("pemetaan sheet → rencana sinkron", () => {
     expect(joined.unknownSkus.map((row) => row.kode_barang)).toEqual(["MDHC4ID", "MDHD4ID"]);
   });
 
+  it("aset hasil 'pindah folder' (public_id datar) tetap cocok dengan folder pemetaan", () => {
+    // Media Library tidak mengubah public_id saat aset dipindah ke folder, jadi
+    // folder & nama berkas datang dari asset_folder/display_name.
+    const moved: CloudinaryAsset[] = [
+      {
+        publicId: "copy_of_apple_macbook_air_13_1",
+        folderPath: "laptop/apple/PR-LAP-AP-MDHA4ID",
+        folderKey: "pr-lap-ap-mdha4id",
+        fileName: "1.png",
+        format: "png",
+      },
+      {
+        publicId: "apple_macbook_air_13_2_2971f4",
+        folderPath: "laptop/apple/PR-LAP-AP-MDHA4ID",
+        folderKey: "pr-lap-ap-mdha4id",
+        fileName: "2.png",
+        format: "png",
+      },
+    ];
+    const targets = targetsFrom(SHEET_ROWS).map((target) => ({
+      ...target,
+      manualPhotoCount: target.kode_barang === "MDHA4ID" ? 2 : 0,
+    }));
+
+    const report = computePhotoSyncPlan({ prefix: "laptop", targets, assets: moved, existing: [] });
+
+    expect(report.summary).toMatchObject({ assetsRead: 2, skusFilled: 2, photosToWrite: 4 });
+    const bySku = new Map(report.plans.map((item) => [item.kode_barang, item]));
+    expect(bySku.get("MDHC4ID")?.photos.map((photo) => photo.publicId)).toEqual([
+      "copy_of_apple_macbook_air_13_1",
+      "apple_macbook_air_13_2_2971f4",
+    ]);
+    expect(bySku.get("MDHD4ID")?.action).toBe("fill");
+    expect(bySku.get("MDHA4ID")?.action).toBe("protected");
+  });
+
   it("nol aset di Cloudinary diberi peringatan, bukan laporan kosong tanpa sebab", () => {
     const report = plan(targetsFrom(SHEET_ROWS), []);
 
