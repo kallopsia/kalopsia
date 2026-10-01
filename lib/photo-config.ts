@@ -32,9 +32,10 @@ const EXCLUDED_NAME_RES = EXCLUDED_BRANDS.map((brand) => ({
   re: new RegExp(`\\b${escapeRegExp(brand.name.toUpperCase())}\\b`),
 }));
 
-// Segmen brand pada kode ber-prefix lama (PR-LAP-<SEG>-...), atau null.
+// Segmen brand pada kode ber-prefix lama (…PR-LAP-<SEG>-…), atau null.
+// Tidak harus di awal: nama folder bisa berupa "laptop/PR-LAP-GI-AERO".
 export function brandCodeFromKode(kodeBarang: string): string | null {
-  const match = /^PR-LAP-([A-Z]{2})-/i.exec((kodeBarang || "").trim());
+  const match = /PR-LAP-([A-Z]{2})-/i.exec((kodeBarang || "").trim());
   return match ? match[1].toUpperCase() : null;
 }
 
