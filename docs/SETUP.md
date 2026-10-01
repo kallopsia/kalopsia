@@ -251,7 +251,9 @@ Yang perlu diketahui sebelum mulai:
 - **Struktur folder** di Cloudinary: `{PREFIX}/{Nama Folder}/…foto…` dengan `PREFIX = laptop`
   (konstanta `CLOUDINARY_FOLDER_PREFIX` di `lib/photo-config.ts`). Boleh ada satu tingkat
   folder brand di antaranya (`laptop/apple/PR-LAP-AP-MDHA4ID`) — pencocokan memakai segmen
-  terdalam.
+  terdalam. Prefix lama `PR-LAP-<BRAND>-` pada nama folder diabaikan, jadi folder bernama
+  polos `AL14-32P-34FK` dan `PR-LAP-AC-AL14-32P-34FK` adalah folder yang sama — semua SKU
+  yang menunjuknya tetap berbagi foto, apa pun ejaan di sheet maupun di Cloudinary.
 - **Format & urutan**: jpg/jpeg/png/webp/avif, nama berkas bebas. Berkas bernama angka
   (`1.jpg`, `2.png`, `10.webp`) diurutkan lebih dulu sesuai nilainya dan `1` jadi foto utama,
   sisanya urut abjad-natural (`asus.webp`, `asus2.webp`, `asus10.webp`). Maksimal **24 foto

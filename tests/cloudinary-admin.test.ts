@@ -37,7 +37,7 @@ function stubFetch(pages: Record<string, unknown>[]): { fetchImpl: FetchLike; ca
 describe("folderPathOf / folderKeyOf", () => {
   it("memecah public_id menjadi folder dan kunci folder", () => {
     expect(folderPathOf("laptop/PR-LAP-AC-A715/2")).toBe("laptop/PR-LAP-AC-A715");
-    expect(folderKeyOf("laptop/PR-LAP-AC-A715/2")).toBe("pr-lap-ac-a715");
+    expect(folderKeyOf("laptop/PR-LAP-AC-A715/2")).toBe("a715");
   });
   it("aset di akar tidak punya folder", () => {
     expect(folderPathOf("download_1_tes")).toBe("");
@@ -82,14 +82,14 @@ describe("listImageAssets — Search API + pagination", () => {
       {
         publicId: "copy_of_macbook_1",
         folderPath: "laptop/apple/PR-LAP-AP-MDHA4ID",
-        folderKey: "pr-lap-ap-mdha4id",
+        folderKey: "mdha4id",
         fileName: "1.png",
         format: "png",
       },
       {
         publicId: "macbook_2",
         folderPath: "laptop/apple/PR-LAP-AP-MDHA4ID",
-        folderKey: "pr-lap-ap-mdha4id",
+        folderKey: "mdha4id",
         fileName: "2.png",
         format: "png",
       },

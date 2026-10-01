@@ -18,8 +18,18 @@ describe("normalizeFolderName", () => {
     expect(normalizeFolderName("  ACER   SWIFT  ")).toBe("acer swift");
   });
   it("wrap prefix dan slash akhir diabaikan", () => {
-    expect(normalizeFolderName("laptop/PR-LAP-AC-X/")).toBe("pr-lap-ac-x");
-    expect(normalizeFolderName("/PR-LAP-AC-X")).toBe("pr-lap-ac-x");
+    expect(normalizeFolderName("laptop/PR-LAP-AC-X/")).toBe("x");
+    expect(normalizeFolderName("/PR-LAP-AC-X")).toBe("x");
+  });
+  it("prefix lama pada nama folder dibuang — ejaan lengkap dan polos satu kunci", () => {
+    expect(normalizeFolderName("laptop/acer/AL14-32P-34FK")).toBe(
+      normalizeFolderName("PR-LAP-AC-AL14-32P-34FK")
+    );
+    expect(normalizeFolderName("AL14-32P-34FK")).toBe("al14-32p-34fk");
+    // Tanpa prefix PR-LAP-XX- nama folder tidak berubah.
+    expect(normalizeFolderName("laptop/acer/A1404VAP-VIPS3851M")).toBe(
+      "a1404vap-vips3851m"
+    );
   });
   it("folder kosong tetap kosong", () => {
     expect(normalizeFolderName("   ")).toBe("");
@@ -140,7 +150,7 @@ describe("satu folder untuk banyak SKU", () => {
   it("3 SKU berbagi folder yang sama meski penulisannya beda", () => {
     const grouped = skusByFolder(joined.targets);
     expect(Object.keys(grouped)).toHaveLength(2);
-    expect(grouped["pr-lap-ac-al14-32p-34fk"].map((target) => target.kode_barang)).toEqual([
+    expect(grouped["al14-32p-34fk"].map((target) => target.kode_barang)).toEqual([
       "AL14-32P-34FK",
       "AL14-32P-35FK",
       "AL14-32P-36FK",
@@ -149,23 +159,32 @@ describe("satu folder untuk banyak SKU", () => {
 
   it("semua SKU yang menunjuk folder itu dapat foto yang sama", () => {
     const grouped = skusByFolder(joined.targets);
-    const shared = grouped["pr-lap-ac-al14-32p-34fk"];
+    const shared = grouped["al14-32p-34fk"];
     expect(new Set(shared.map((target) => target.folderKey))).toEqual(
-      new Set(["pr-lap-ac-al14-32p-34fk"])
+      new Set(["al14-32p-34fk"])
     );
   });
 
+  it("ejaan folder dengan dan tanpa prefix tetap satu kelompok", () => {
+    const joinedMixed = joinMappingToProducts(
+      [
+        { kode_barang: "AL14-32P-34FK", folder: "AL14-32P-34FK" },
+        { kode_barang: "AL14-32P-35FK", folder: "PR-LAP-AC-AL14-32P-34FK" },
+      ],
+      products
+    );
+    const grouped = skusByFolder(joinedMixed.targets);
+    expect(grouped["al14-32p-34fk"]).toHaveLength(2);
+  });
+
   it("daftar folder unik untuk sinkron hanya berisi folder sebenarnya", () => {
-    expect(joined.folderKeys).toEqual([
-      "pr-lap-ac-ag14-72p-56pd",
-      "pr-lap-ac-al14-32p-34fk",
-    ]);
+    expect(joined.folderKeys).toEqual(["ag14-72p-56pd", "al14-32p-34fk"]);
   });
 
   it("hitungan pemakaian folder terurut terbanyak dulu", () => {
     expect(countByFolder(joined.targets)).toEqual([
-      { folderKey: "pr-lap-ac-al14-32p-34fk", count: 3 },
-      { folderKey: "pr-lap-ac-ag14-72p-56pd", count: 1 },
+      { folderKey: "al14-32p-34fk", count: 3 },
+      { folderKey: "ag14-72p-56pd", count: 1 },
     ]);
   });
 });

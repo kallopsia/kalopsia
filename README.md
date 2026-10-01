@@ -131,7 +131,8 @@ npm run start
   **`Pemetaan SKU`** di Excel foto (kolom `KODEBARANG` + nama folder) — sistem **tidak pernah**
   menebak folder dari kode barang atau nama produk. Satu folder bisa melayani banyak SKU, dan
   satu SKU bisa di-override manual ke folder lain. Foto berada di `laptop/<Nama Folder>/…`
-  (boleh bersarang satu tingkat, mis. `laptop/apple/PR-LAP-AP-MDHA4ID`); format
+  (boleh bersarang satu tingkat, mis. `laptop/apple/PR-LAP-AP-MDHA4ID`; prefix lama
+  `PR-LAP-<BRAND>-` pada nama folder diabaikan, jadi `MDHA4ID` = `PR-LAP-AP-MDHA4ID`); format
   jpg/jpeg/png/webp/avif dengan nama berkas bebas — berkas bernama angka diurutkan lebih dulu
   sesuai nilainya (`1` = foto utama), sisanya urut abjad-natural, maksimal 24 foto per produk;
   berkas non-gambar dilewati dan dilaporkan. Aset yang dipindah lewat Media Library tetap

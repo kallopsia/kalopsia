@@ -6,6 +6,7 @@ import {
   type SyncTarget,
 } from "../lib/photo-sync";
 import { folderKeyOf, folderPathOf, type CloudinaryAsset } from "../lib/cloudinary-admin";
+import { normalizeFolderName } from "../lib/photo-mapping";
 
 function asset(publicId: string, format = "jpg"): CloudinaryAsset {
   return {
@@ -22,7 +23,7 @@ function target(kode_barang: string, folder: string, productId = kode_barang): S
     productId,
     kode_barang,
     folder,
-    folderKey: folder.trim().toLowerCase(),
+    folderKey: normalizeFolderName(folder),
     manualPhotoCount: 0,
   };
 }

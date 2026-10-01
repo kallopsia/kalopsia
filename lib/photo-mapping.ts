@@ -30,6 +30,10 @@ export type NormalizedMapping = {
 
 // Kunci folder: tanpa besar/kecil, spasi ekstra diabaikan, wrap (prefix dan/atau
 // slash) dibuang supaya "laptop/PR-LAP-AC-X/" cocok dengan "PR-LAP-AC-X".
+// Prefix lama "PR-LAP-<BRAND>-" pada nama folder juga dibuang, jadi folder
+// Cloudinary "AL14-32P-34FK" dan "PR-LAP-AC-AL14-32P-34FK" menghasilkan kunci
+// yang sama — satu folder tetap dipakai bersama semua SKU yang menunjuknya,
+// berapa pun ejaan namanya di sheet maupun di Cloudinary.
 export function normalizeFolderName(folder: string): string {
   const withoutSpaces = (folder || "").trim().replace(/\s+/g, " ");
   const segments = withoutSpaces
@@ -37,7 +41,7 @@ export function normalizeFolderName(folder: string): string {
     .map((segment) => segment.trim())
     .filter(Boolean);
   const core = segments[segments.length - 1] || "";
-  return core.toLowerCase();
+  return stripKodePrefix(core).toLowerCase();
 }
 
 // Kunci SKU: prefix lama PR-LAP-<BRAND>- dibuang (DB menyimpan tanpa prefix),

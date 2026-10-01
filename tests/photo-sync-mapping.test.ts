@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { computePhotoSyncPlan, type PhotoSyncReport, type SyncTarget } from "../lib/photo-sync";
 import {
   joinMappingToProducts,
+  normalizeFolderName,
   normalizeMappingRows,
   type PhotoMappingInput,
 } from "../lib/photo-mapping";
@@ -106,6 +107,40 @@ describe("pemetaan sheet → rencana sinkron", () => {
     expect(report.writePlans[0].photos[0].publicId).toBe("laptop/apple/PR-LAP-AP-MDHA4ID/1");
   });
 
+  it("folder Cloudinary bernama polos (tanpa prefix) tetap mengisi semua SKU", () => {
+    // Kasus nyata: sheet menulis "PR-LAP-AC-AL14-32P-34FK" untuk 10 SKU tapi
+    // foldernya di Cloudinary hanya "AL14-32P-34FK" dengan public_id datar.
+    const inputs: PhotoMappingInput[] = [
+      { rowNumber: 2, kode_barang: "PR-LAP-AC-AL14-32P-34FK", folder: "PR-LAP-AC-AL14-32P-34FK" },
+      { rowNumber: 3, kode_barang: "PR-LAP-AC-AL14-32P-37SA", folder: "PR-LAP-AC-AL14-32P-34FK" },
+      { rowNumber: 4, kode_barang: "PR-LAP-AC-AL14-44P-R1XH", folder: "AL14-32P-34FK" },
+    ];
+    const products: DbProduct[] = [
+      { id: "p-34fk", kode_barang: "AL14-32P-34FK" },
+      { id: "p-37sa", kode_barang: "AL14-32P-37SA" },
+      { id: "p-r1xh", kode_barang: "AL14-44P-R1XH" },
+    ];
+    const flatAssets: CloudinaryAsset[] = ["1", "2"].map((id) => ({
+      publicId: id,
+      folderPath: "laptop/acer/AL14-32P-34FK",
+      folderKey: normalizeFolderName("laptop/acer/AL14-32P-34FK"),
+      fileName: `${id}.webp`,
+      format: "webp",
+    }));
+
+    const report = computePhotoSyncPlan({
+      prefix: "laptop",
+      targets: targetsFrom(inputs, products),
+      assets: flatAssets,
+      existing: [],
+    });
+
+    expect(report.summary).toMatchObject({ skusFilled: 3, photosToWrite: 6, foldersOrphan: 0 });
+    report.writePlans.forEach((item) =>
+      expect(item.photos.map((photo) => photo.publicId)).toEqual(["1", "2"])
+    );
+  });
+
   it("SKU berfoto manual dilindungi, saudara satu folder tetap terisi", () => {
     const targets = targetsFrom(SHEET_ROWS).map((target) => ({
       ...target,
@@ -140,14 +175,14 @@ describe("pemetaan sheet → rencana sinkron", () => {
       {
         publicId: "copy_of_apple_macbook_air_13_1",
         folderPath: "laptop/apple/PR-LAP-AP-MDHA4ID",
-        folderKey: "pr-lap-ap-mdha4id",
+        folderKey: "mdha4id",
         fileName: "1.png",
         format: "png",
       },
       {
         publicId: "apple_macbook_air_13_2_2971f4",
         folderPath: "laptop/apple/PR-LAP-AP-MDHA4ID",
-        folderKey: "pr-lap-ap-mdha4id",
+        folderKey: "mdha4id",
         fileName: "2.png",
         format: "png",
       },
