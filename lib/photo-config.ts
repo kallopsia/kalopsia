@@ -2,7 +2,7 @@
 // Ubah berkas ini saja bila struktur folder di Cloudinary berubah.
 
 // Semua folder foto produk berada di bawah prefix ini:
-//   {CLOUDINARY_FOLDER_PREFIX}/{Nama Folder}/1.jpg
+//   {CLOUDINARY_FOLDER_PREFIX}/{Nama Folder}/…boleh bersarang satu tingkat brand…
 export const CLOUDINARY_FOLDER_PREFIX = "laptop";
 
 // Brand yang sudah tidak dijual: pemetaannya tidak diimpor dan foldernya

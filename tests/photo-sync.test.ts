@@ -60,8 +60,12 @@ describe("computePhotoSyncPlan — isi foto", () => {
       assets,
       existing: [],
     });
-    expect(report.writePlans[0].photos.map((photo) => photo.posisi)).toEqual([1, 2, 10]);
-    expect(report.writePlans[0].photos[0].publicId).toBe("laptop/PR-LAP-AC-A715/1");
+    expect(report.writePlans[0].photos.map((photo) => photo.publicId)).toEqual([
+      "laptop/PR-LAP-AC-A715/1",
+      "laptop/PR-LAP-AC-A715/2",
+      "laptop/PR-LAP-AC-A715/10",
+    ]);
+    expect(report.writePlans[0].photos.map((photo) => photo.posisi)).toEqual([1, 2, 3]);
     expect(report.summary).toMatchObject({ skusFilled: 1, photosToWrite: 3, skusToWrite: 1 });
   });
 
@@ -88,16 +92,21 @@ describe("computePhotoSyncPlan — isi foto", () => {
     );
   });
 
-  it("berkas tidak numerik dilaporkan dan dilewati", () => {
+  it("berkas bukan gambar dilaporkan dan dilewati", () => {
     const report = computePhotoSyncPlan({
       prefix: "laptop",
       targets: [target("A715-59G", "PR-LAP-AC-A715")],
       assets: [...assets, asset("laptop/PR-LAP-AC-A715/foto depan"), asset("laptop/PR-LAP-AC-A715/sampul", "pdf")],
       existing: [],
     });
-    expect(report.summary.photosToWrite).toBe(3);
+    expect(report.summary.photosToWrite).toBe(4);
+    expect(report.writePlans[0].photos.map((photo) => photo.fileName)).toEqual([
+      "1.jpg",
+      "2.jpg",
+      "10.jpg",
+      "foto depan.jpg",
+    ]);
     expect(report.skippedFiles.map((file) => [file.fileName, file.reason])).toEqual([
-      ["foto depan.jpg", "pola"],
       ["sampul.pdf", "ekstensi"],
     ]);
   });
@@ -158,7 +167,7 @@ describe("computePhotoSyncPlan — laporan folder", () => {
         target("KOSONG", "PR-LAP-AC-KOSONG"),
         target("BELUM", "PR-LAP-AC-BELUM"),
       ],
-      assets: [asset("laptop/PR-LAP-AC-KOSONG/sampul")],
+      assets: [asset("laptop/PR-LAP-AC-KOSONG/sampul", "pdf")],
       folders: ["laptop/PR-LAP-AC-KOSONG"],
       existing: [],
     });

@@ -1,58 +1,51 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_PRODUCT_PHOTOS,
-  parsePhotoFileName,
+  naturalCompareNames,
+  photoExtension,
+  photoNameOrder,
   photoPublicId,
   planFolderPhotos,
-  sortPhotoAssets,
 } from "../lib/photo-file";
 
-describe("parsePhotoFileName — pola numerik", () => {
-  it("1.jpg → indeks 1", () => {
-    expect(parsePhotoFileName("1.jpg")).toEqual({ index: 1, extension: "jpg", baseName: "1" });
+describe("photoExtension", () => {
+  it("ekstensi huruf besar dilowercase-kan", () => {
+    expect(photoExtension("4.JPG")).toBe("jpg");
   });
-  it("10.jpg → indeks 10 (bukan 1)", () => {
-    expect(parsePhotoFileName("10.jpg")?.index).toBe(10);
-  });
-  it("2.png dan 3.webp diterima", () => {
-    expect(parsePhotoFileName("2.png")?.extension).toBe("png");
-    expect(parsePhotoFileName("3.webp")?.extension).toBe("webp");
-  });
-  it("07.jpg → indeks 7, baseName tetap 07", () => {
-    expect(parsePhotoFileName("07.jpg")).toEqual({ index: 7, extension: "jpg", baseName: "07" });
-  });
-  it("ekstensi huruf besar diterima", () => {
-    expect(parsePhotoFileName("4.JPG")).toEqual({ index: 4, extension: "jpg", baseName: "4" });
-  });
-  it("spasi di tepi diabaikan", () => {
-    expect(parsePhotoFileName("  8.jpeg  ")?.index).toBe(8);
-  });
-  it("foto depan.jpg ditolak", () => {
-    expect(parsePhotoFileName("foto depan.jpg")).toBeNull();
-  });
-  it("IMG_1.jpg, 1.heic, 1.jpg.png, dan 0.jpg ditolak", () => {
-    expect(parsePhotoFileName("IMG_1.jpg")).toBeNull();
-    expect(parsePhotoFileName("1.heic")).toBeNull();
-    expect(parsePhotoFileName("1.jpg.png")).toBeNull();
-    expect(parsePhotoFileName("0.jpg")).toBeNull();
+  it("tanpa ekstensi → string kosong", () => {
+    expect(photoExtension("macbook")).toBe("");
   });
 });
 
-describe("sortPhotoAssets — urut numerik", () => {
-  it("2 sebelum 10", () => {
-    const sorted = sortPhotoAssets([
-      { index: 10, fileName: "10.jpg", publicId: "a/10" },
-      { index: 2, fileName: "2.jpg", publicId: "a/2" },
-      { index: 1, fileName: "1.jpg", publicId: "a/1" },
-    ]);
-    expect(sorted.map((photo) => photo.index)).toEqual([1, 2, 10]);
+describe("photoNameOrder — nama berawalan angka", () => {
+  it("1.jpg → 1, 10.jpg → 10 (bukan 1)", () => {
+    expect(photoNameOrder("1.jpg")).toBe(1);
+    expect(photoNameOrder("10.jpg")).toBe(10);
   });
-  it("seri indeks dipecah dengan nama berkas", () => {
-    const sorted = sortPhotoAssets([
-      { index: 3, fileName: "3.png", publicId: "p" },
-      { index: 3, fileName: "3.jpg", publicId: "j" },
+  it("07.png → 7", () => {
+    expect(photoNameOrder("07.png")).toBe(7);
+  });
+  it("spasi di tepi diabaikan", () => {
+    expect(photoNameOrder("  8.jpeg  ")).toBe(8);
+  });
+  it("bukan nama berangka → null", () => {
+    expect(photoNameOrder("asus2.webp")).toBeNull();
+    expect(photoNameOrder("foto depan.jpg")).toBeNull();
+    expect(photoNameOrder("0.jpg")).toBeNull();
+  });
+});
+
+describe("naturalCompareNames — urut abjad sadar-angka", () => {
+  it("asus2 sebelum asus10", () => {
+    const names = ["asus10.webp", "asus2.webp", "asus.webp"];
+    expect(names.slice().sort(naturalCompareNames)).toEqual([
+      "asus.webp",
+      "asus2.webp",
+      "asus10.webp",
     ]);
-    expect(sorted.map((photo) => photo.fileName)).toEqual(["3.jpg", "3.png"]);
+  });
+  it("tidak peka huruf besar/kecil", () => {
+    expect(naturalCompareNames("Mac1.png", "mac2.png")).toBeLessThan(0);
   });
 });
 
@@ -81,17 +74,48 @@ describe("planFolderPhotos", () => {
     expect(plan.photos[0].publicId).toBe("laptop/PR-LAP-AC-X/1");
   });
 
-  it("berkas 1 = foto utama", () => {
+  it("posisi 1..n mengikuti urutan, berkas pertama jadi foto utama", () => {
     const plan = planFolderPhotos("PR-LAP-AC-X", files);
-    expect(plan.photos[0].index).toBe(1);
+    expect(plan.photos.map((photo) => photo.index)).toEqual([1, 2, 3, 4]);
+    expect(plan.photos[0].fileName).toBe("1.jpg");
   });
 
-  it("memisahkan file non-numerik dengan alasan", () => {
-    const plan = planFolderPhotos("PR-LAP-AC-X", ["1.jpg", "foto depan.jpg", "2.bmp"]);
-    expect(plan.photos.map((photo) => photo.fileName)).toEqual(["1.jpg"]);
+  it("nama bebas diterima, diurutkan setelah nama berangka", () => {
+    const plan = planFolderPhotos("PR-LAP-AC-X", [
+      "expert-b14.webp",
+      "2.jpg",
+      "1.jpg",
+      "expert-b10.webp",
+      "download_tes.png",
+    ]);
+    expect(plan.photos.map((photo) => photo.fileName)).toEqual([
+      "1.jpg",
+      "2.jpg",
+      "download_tes.png",
+      "expert-b10.webp",
+      "expert-b14.webp",
+    ]);
+    expect(plan.photos.map((photo) => photo.index)).toEqual([1, 2, 3, 4, 5]);
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("ekstensi .avif diterima", () => {
+    const plan = planFolderPhotos("PR-LAP-HP-X", ["hp-omni.avif"]);
+    expect(plan.photos).toHaveLength(1);
+    expect(plan.photos[0].publicId).toBe("laptop/PR-LAP-HP-X/hp-omni");
+  });
+
+  it("public_id dibangun dari nama berkas tanpa ekstensi", () => {
+    const plan = planFolderPhotos("PR-LAP-AC-X", ["asus2.webp"]);
+    expect(plan.photos[0].publicId).toBe("laptop/PR-LAP-AC-X/asus2");
+  });
+
+  it("hanya ekstensi non-gambar yang dilewati", () => {
+    const plan = planFolderPhotos("PR-LAP-AC-X", ["1.jpg", "foto depan.jpg", "sampul.pdf", "2.heic"]);
+    expect(plan.photos.map((photo) => photo.fileName)).toEqual(["1.jpg", "foto depan.jpg"]);
     expect(plan.skipped).toEqual([
-      { fileName: "foto depan.jpg", reason: "pola" },
-      { fileName: "2.bmp", reason: "ekstensi" },
+      { fileName: "sampul.pdf", reason: "ekstensi" },
+      { fileName: "2.heic", reason: "ekstensi" },
     ]);
   });
 
@@ -103,12 +127,12 @@ describe("planFolderPhotos", () => {
 
   it("public_id dari Cloudinary dipakai apa adanya", () => {
     const plan = planFolderPhotos("PR-LAP-AC-X", [
+      { fileName: "copy_of_macbook_1.png", publicId: "copy_of_macbook_1" },
       { fileName: "2.jpg", publicId: "laptop/PR-LAP-AC-X/2" },
-      { fileName: "1.jpg", publicId: "laptop/PR-LAP-AC-X/1" },
     ]);
     expect(plan.photos.map((photo) => photo.publicId)).toEqual([
-      "laptop/PR-LAP-AC-X/1",
       "laptop/PR-LAP-AC-X/2",
+      "copy_of_macbook_1",
     ]);
   });
 

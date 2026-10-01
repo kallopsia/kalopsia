@@ -64,7 +64,7 @@ export type EmptyFolder = {
 export type SkippedFile = {
   folder: string;
   fileName: string;
-  reason: "pola" | "ekstensi";
+  reason: "ekstensi";
 };
 
 // SKU yang foldernya kini kosong padahal masih punya baris hasil sinkron lama.
