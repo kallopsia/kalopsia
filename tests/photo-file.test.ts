@@ -101,6 +101,17 @@ describe("planFolderPhotos", () => {
     expect(plan.skipped).toEqual([]);
   });
 
+  it("public_id dari Cloudinary dipakai apa adanya", () => {
+    const plan = planFolderPhotos("PR-LAP-AC-X", [
+      { fileName: "2.jpg", publicId: "laptop/PR-LAP-AC-X/2" },
+      { fileName: "1.jpg", publicId: "laptop/PR-LAP-AC-X/1" },
+    ]);
+    expect(plan.photos.map((photo) => photo.publicId)).toEqual([
+      "laptop/PR-LAP-AC-X/1",
+      "laptop/PR-LAP-AC-X/2",
+    ]);
+  });
+
   it("melebihi batas foto → sisanya masuk truncated, tidak disimpan", () => {
     const many = Array.from({ length: MAX_PRODUCT_PHOTOS + 3 }, (_, i) => `${i + 1}.jpg`);
     const plan = planFolderPhotos("PR-LAP-BANYAK", many);

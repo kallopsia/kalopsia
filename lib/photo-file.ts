@@ -29,6 +29,10 @@ export type SkippedPhotoFile = {
   reason: "pola" | "ekstensi";
 };
 
+// publicId sebaiknya diambil dari hasil listing Cloudinary (sumber kebenaran);
+// kalau tidak ada, dibangun dari prefix + folder + nama berkas.
+export type PhotoFileInput = string | { fileName: string; publicId?: string };
+
 export type FolderPhotoPlan = {
   folder: string;
   photos: PhotoAsset[];
@@ -77,11 +81,11 @@ export function photoPublicId(prefix: string, folder: string, baseName: string):
   return [prefix, cleanFolder, baseName].filter(Boolean).join("/");
 }
 
-// Masuk: nama berkas satu folder dari Cloudinary. Keluar: foto terurut untuk
+// Masuk: daftar berkas satu folder dari Cloudinary. Keluar: foto terurut untuk
 // satu SKU + daftar berkas yang dilewati (dilaporkan, tidak pernah disimpan).
 export function planFolderPhotos(
   folder: string,
-  fileNames: string[],
+  files: PhotoFileInput[],
   options?: { prefix?: string; limit?: number }
 ): FolderPhotoPlan {
   const prefix = options?.prefix ?? CLOUDINARY_FOLDER_PREFIX;
@@ -90,15 +94,16 @@ export function planFolderPhotos(
   const parsed: PhotoAsset[] = [];
   const skipped: SkippedPhotoFile[] = [];
 
-  (fileNames || []).forEach((rawFileName) => {
-    const fileName = (rawFileName || "").trim();
+  (files || []).forEach((raw) => {
+    const input = typeof raw === "string" ? { fileName: raw } : raw;
+    const fileName = (input.fileName || "").trim();
     if (!fileName) return;
     const info = parsePhotoFileName(fileName);
     if (info) {
       parsed.push({
         index: info.index,
         fileName,
-        publicId: photoPublicId(prefix, folder, info.baseName),
+        publicId: (input.publicId || "").trim() || photoPublicId(prefix, folder, info.baseName),
       });
       return;
     }
