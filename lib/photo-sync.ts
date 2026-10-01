@@ -275,10 +275,29 @@ export function computePhotoSyncPlan(input: PhotoSyncInput): PhotoSyncReport {
   const count = (action: SkuPlanAction) =>
     plans.filter((plan) => plan.action === action).length;
 
+  // Laporan "0 aset" tanpa penjelasan membingungkan: admin bisa mengira
+  // pemetaannya rusak padahal folder di Cloudinary memang masih kosong.
+  const warnings: string[] = [];
+  const assetCount = (input.assets || []).length;
+  if (assetCount === 0 && plans.length > 0) {
+    warnings.push(
+      `Tidak ada satu pun aset foto terbaca di bawah prefix "${prefix}/" — ` +
+        `semua SKU dilaporkan tanpa foto. Periksa apakah foto sudah diunggah ke folder itu.`
+    );
+  } else if (assetCount > 0 && orphanFolders.length > 0 && mappedKeys.size > 0) {
+    const matched = Object.keys(grouped).filter((folderKey) => mappedKeys.has(folderKey)).length;
+    if (matched === 0) {
+      warnings.push(
+        `${assetCount} aset terbaca tapi tidak ada yang cocok dengan folder pemetaan — ` +
+          `bandingkan nama folder di Cloudinary dengan kolom "Nama Folder" (lihat daftar folder yatim).`
+      );
+    }
+  }
+
   return {
     prefix,
     overwrite,
-    warnings: [],
+    warnings,
     summary: {
       skusMapped: plans.length,
       assetsRead: (input.assets || []).length,
