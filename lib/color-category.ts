@@ -1,6 +1,6 @@
 // Deteksi warna dari teks spesifikasi/nama + kunci pengelompokan varian.
 // Modul murni — aman diimpor client maupun server, tanpa dependensi Supabase.
-import { COLOR_CODES, canonicalColor } from "./color-config";
+import { COLOR_CODES, canonicalColor, colorSpellings } from "./color-config";
 
 export type DetectedColor = {
   // Kode asli persis seperti di konfigurasi (untuk tampilan), mis. "SPACE BLK".
@@ -39,6 +39,17 @@ export function detectColor(text: string | null | undefined): DetectedColor | nu
   return null;
 }
 
+// Regex semua ejaan satu warna kanonik (terpanjang lebih dulu) supaya teks
+// spesifikasi bersih walau ejaan di spec berbeda dengan kode tersimpan.
+function colorRemovalRegex(color: DetectedColor): RegExp {
+  const spellings = colorSpellings(color.canonical)
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp);
+  const codes = spellings.length > 0 ? spellings : [escapeRegExp(color.code.toUpperCase())];
+  return new RegExp(`\\b(${codes.join("|")})\\b`, "gi");
+}
+
 // Buang sufiks kode varian di ujung (mis. " -MGPN3ID/A") supaya SKU berbeda
 // tidak menghalangi pengelompokan, lalu buang kode warna, rapikan spasi, lowercase.
 export function specSansColor(
@@ -48,8 +59,7 @@ export function specSansColor(
   let text = (spec || "").trim();
   text = text.replace(/\s*-[A-Z0-9./-]+$/i, " ");
   if (color) {
-    const re = new RegExp(`\\b${escapeRegExp(color.code.toUpperCase())}\\b`, "gi");
-    text = text.replace(re, " ");
+    text = text.replace(colorRemovalRegex(color), " ");
   }
   return text.replace(/\s+/g, " ").trim().toLowerCase();
 }
@@ -71,8 +81,7 @@ function normalizeCpuTypo(value: string): string {
 // mungkin memuat warna, mis. nama turunan spesifikasi "… SPACE BLK").
 function stripColor(value: string, color: DetectedColor | null): string {
   if (!color) return value;
-  const re = new RegExp(`\\b${escapeRegExp(color.code.toUpperCase())}\\b`, "gi");
-  return value.replace(re, " ").replace(/\s+/g, " ").trim();
+  return value.replace(colorRemovalRegex(color), " ").replace(/\s+/g, " ").trim();
 }
 
 // Kunci pengelompokan varian: nama + spesifikasi-tanpa-warna + kategori layar.

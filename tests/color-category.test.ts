@@ -202,6 +202,26 @@ describe("variantGroupingKey", () => {
     });
     expect(new Set(keys).size).toBe(1);
   });
+  it("kode tersimpan beda ejaan dengan spec tetap bersih dari kunci", () => {
+    // Warna manual disimpan sebagai kode "TERRACOTA" padahal spec menulis
+    // "TERRA COTTA" — keduanya harus terbuang supaya kunci sama dengan BLU.
+    const base = "ASUS VIVOBOOK 14 A1404VAP CORE 3 100U 8GB 512GB W11+OHS+M365B 14.0FHD VIPS";
+    const specTerra = `${base} TERRA COTTA -VIPS3852M`;
+    const specBlu = `${base} BLU -VIPS3851M`;
+    const keyTerra = variantGroupingKey({
+      name: "ASUS VIVOBOOK 14",
+      spec: specTerra,
+      color: { code: "TERRACOTA", canonical: "TERRACOTA" },
+      screenCategory: "14",
+    });
+    const keyBlu = variantGroupingKey({
+      name: "ASUS VIVOBOOK 14",
+      spec: specBlu,
+      color: detectColor(specBlu),
+      screenCategory: "14",
+    });
+    expect(keyTerra).toBe(keyBlu);
+  });
   it("typo CORE I7 150U disamakan dengan CORE 7 150U pada kunci grup", () => {
     const base = "ASUS VIVOBOOK 14 A1404VAP";
     const tail = "16GB 1TB W11+OHS+M365B 14.0FHD VIPS BLU";

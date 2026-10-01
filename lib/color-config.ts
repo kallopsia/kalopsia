@@ -80,3 +80,13 @@ export function canonicalColor(code: string): string {
   const key = (code || "").toUpperCase().replace(/\s+/g, " ").trim();
   return COLOR_ALIAS[key] || key;
 }
+
+// Semua ejaan (kode) yang menunjuk satu kanonik. Dipakai saat membersihkan
+// teks spesifikasi/nama dari warna: kode tersimpan (mis. hasil set manual)
+// boleh berbeda ejaan dengan teks spesifikasi ("TERRA COTTA" di spec vs kode
+// "TERRACOTA"), dan keduanya harus sama-sama terbuang dari kunci grup.
+export function colorSpellings(canonical: string): string[] {
+  const target = (canonical || "").toUpperCase().replace(/\s+/g, " ").trim();
+  if (!target) return [];
+  return COLOR_CODES.filter((code) => canonicalColor(code) === target);
+}
