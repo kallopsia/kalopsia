@@ -26,6 +26,8 @@ export const COLOR_CODES: string[] = [
   "TERRACOTA",
   "COOL SLV",
   "TERRA COTA",
+  "TERRACOTTA",
+  "TERRA COTTA",
   "BRW",
   "BEIGE",
   "TITANIUM BRW",
@@ -69,6 +71,8 @@ export const COLOR_ALIAS: Record<string, string> = {
   GLD: "GOLD",
   TERRACOTA: "TERRACOTA",
   "TERRA COTA": "TERRACOTA",
+  TERRACOTTA: "TERRACOTA",
+  "TERRA COTTA": "TERRACOTA",
 };
 
 // Kanonik untuk pengelompokan/dedup. Kode di luar peta alias → dirinya sendiri.

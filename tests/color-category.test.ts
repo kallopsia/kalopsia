@@ -79,6 +79,12 @@ describe("detectColor — alias normalization (kanonik)", () => {
     expect(detectColor("X TERRACOTA")?.canonical).toBe("TERRACOTA");
     expect(detectColor("X TERRA COTA")?.canonical).toBe("TERRACOTA");
   });
+  it("TERRACOTTA / TERRA COTTA (dua T) dikenali dan kanoniknya TERRACOTA", () => {
+    expect(detectColor("X TERRACOTTA")?.canonical).toBe("TERRACOTA");
+    expect(detectColor("X TERRA COTTA")?.canonical).toBe("TERRACOTA");
+    expect(canonicalColor("terracotta")).toBe("TERRACOTA");
+    expect(canonicalColor("terra cotta")).toBe("TERRACOTA");
+  });
   it("multi-word greys tetap berbeda (bukan GREY)", () => {
     expect(detectColor("X DARK GRY")?.canonical).toBe("DARK GRY");
     expect(detectColor("X LIGHT GRY")?.canonical).toBe("LIGHT GRY");
@@ -163,5 +169,73 @@ describe("variantGroupingKey", () => {
       screenCategory: "14",
     });
     expect(keyA).not.toBe(keyB);
+  });
+  it("TERRA COTTA -VIPS3852M dan BLU -VIPS3851M masuk kunci yang sama", () => {
+    const base = "ASUS VIVOBOOK 14 A1404VAP CORE 3 100U 8GB 512GB W11+OHS+M365B 14.0FHD VIPS";
+    const specTerra = `${base} TERRA COTTA -VIPS3852M`;
+    const specBlu = `${base} BLU -VIPS3851M`;
+    const keyTerra = variantGroupingKey({
+      name: "",
+      spec: specTerra,
+      color: detectColor(specTerra),
+      screenCategory: "14",
+    });
+    const keyBlu = variantGroupingKey({
+      name: "",
+      spec: specBlu,
+      color: detectColor(specBlu),
+      screenCategory: "14",
+    });
+    expect(detectColor(specTerra)?.canonical).toBe("TERRACOTA");
+    expect(keyTerra).toBe(keyBlu);
+  });
+  it("empat ejaan terracota menghasilkan kunci yang sama", () => {
+    const base = "ASUS VIVOBOOK 14 A1404VAP CORE 3 100U 8GB 512GB W11+OHS+M365B 14.0FHD VIPS";
+    const keys = ["TERRACOTA", "TERRA COTA", "TERRACOTTA", "TERRA COTTA"].map((warna) => {
+      const spec = `${base} ${warna} -VIPS3852M`;
+      return variantGroupingKey({
+        name: "",
+        spec,
+        color: detectColor(spec),
+        screenCategory: "14",
+      });
+    });
+    expect(new Set(keys).size).toBe(1);
+  });
+  it("typo CORE I7 150U disamakan dengan CORE 7 150U pada kunci grup", () => {
+    const base = "ASUS VIVOBOOK 14 A1404VAP";
+    const tail = "16GB 1TB W11+OHS+M365B 14.0FHD VIPS BLU";
+    const specTypo = `${base} CORE I7 150U ${tail} -VIPS7115M`;
+    const specBenar = `${base} CORE 7 150U ${tail} -VIPS7111M`;
+    const keyTypo = variantGroupingKey({
+      name: "",
+      spec: specTypo,
+      color: detectColor(specTypo),
+      screenCategory: "14",
+    });
+    const keyBenar = variantGroupingKey({
+      name: "",
+      spec: specBenar,
+      color: detectColor(specBenar),
+      screenCategory: "14",
+    });
+    expect(keyTypo).toBe(keyBenar);
+  });
+  it("CORE I5 dan CORE 5 tetap kunci berbeda dari CORE 7", () => {
+    const base = "ASUS VIVOBOOK 14 A1404VAP";
+    const tail = "16GB 1TB W11+OHS+M365B 14.0FHD VIPS BLU -VIPS7111M";
+    const keyI5 = variantGroupingKey({
+      name: "",
+      spec: `${base} CORE I5 120U ${tail}`,
+      color: detectColor(`${base} CORE I5 120U ${tail}`),
+      screenCategory: "14",
+    });
+    const key7 = variantGroupingKey({
+      name: "",
+      spec: `${base} CORE 7 150U ${tail}`,
+      color: detectColor(`${base} CORE 7 150U ${tail}`),
+      screenCategory: "14",
+    });
+    expect(keyI5).not.toBe(key7);
   });
 });

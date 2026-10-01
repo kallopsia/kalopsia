@@ -58,6 +58,15 @@ function normalizeKey(value: string | null | undefined): string {
   return (value || "").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+// Typo penulisan CPU di data lama ("CORE I7 150U") disamakan dengan penulisan
+// yang benar ("CORE 7 150U") supaya kunci grupnya identik. Hanya dipakai untuk
+// kunci grup — teks spesifikasi tersimpan tidak diubah.
+const CPU_TYPO_RE = /\bCORE I(\d+)\b/gi;
+
+function normalizeCpuTypo(value: string): string {
+  return value.replace(CPU_TYPO_RE, "CORE $1");
+}
+
 // Buang semua kemunculan kode warna dari sebuah teks (dipakai untuk nama yang
 // mungkin memuat warna, mis. nama turunan spesifikasi "… SPACE BLK").
 function stripColor(value: string, color: DetectedColor | null): string {
@@ -75,7 +84,7 @@ export function variantGroupingKey(input: {
   color: DetectedColor | null;
   screenCategory: string;
 }): string {
-  const nameKey = normalizeKey(stripColor(input.name || "", input.color));
-  const specKey = specSansColor(input.spec, input.color);
+  const nameKey = normalizeKey(stripColor(normalizeCpuTypo(input.name || ""), input.color));
+  const specKey = specSansColor(normalizeCpuTypo(input.spec || ""), input.color);
   return [nameKey, specKey, normalizeKey(input.screenCategory)].join("||");
 }
