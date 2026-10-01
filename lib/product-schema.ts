@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_PRODUCT_PHOTOS } from "./photo-file";
 
 export const CLOUDINARY_HOST = "res.cloudinary.com";
 
@@ -22,7 +23,9 @@ export function cloudinaryUrlSchema(): z.ZodType<string> {
     }, `URL gambar harus berada di cloud "${cloudName || "<CLOUD_NAME>"}"`);
 }
 
-export const imageUrlsSchema = z.array(cloudinaryUrlSchema()).max(12, "Maksimal 12 gambar");
+export const imageUrlsSchema = z
+  .array(cloudinaryUrlSchema())
+  .max(MAX_PRODUCT_PHOTOS, `Maksimal ${MAX_PRODUCT_PHOTOS} gambar`);
 
 export const productInputSchema = z.object({
   kode_barang: z

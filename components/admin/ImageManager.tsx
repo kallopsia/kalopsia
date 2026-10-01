@@ -16,6 +16,7 @@ import {
   smallDangerButtonClass,
   smallSecondaryButtonClass,
 } from "./styles";
+import { MAX_PRODUCT_PHOTOS } from "@/lib/photo-file";
 
 export type CloudinaryConfig = {
   cloudName: string;
@@ -30,7 +31,7 @@ interface ImageManagerProps {
   config: CloudinaryConfig;
 }
 
-const MAX_IMAGES = 12;
+const MAX_IMAGES = MAX_PRODUCT_PHOTOS;
 
 export default function ImageManager({ value, onChange, config }: ImageManagerProps) {
   const toast = useToast();
