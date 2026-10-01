@@ -6,6 +6,7 @@ import {
   PRODUCTS_REVALIDATE_SECONDS,
 } from "@/lib/supabase/server";
 import { collectKategori, productSlug, toProduct } from "./product-view";
+import type { PhotoRef } from "./photo-url";
 
 export { PRODUCTS_CACHE_TAG, PRODUCTS_REVALIDATE_SECONDS, collectKategori };
 
@@ -38,11 +39,37 @@ const getCatalogState = cache(async (): Promise<CatalogState> => {
   return { rows, status: rows.length > 0 ? "ok" : "empty" };
 });
 
+// Satu query untuk semua foto, digabung di JS. Tidak di-embed ke products supaya
+// katalog tetap jalan kalau tabel product_photos belum ada (migrasi belum jalan).
+type PhotoIndex = Record<string, PhotoRef[]>;
+
+const getPhotoIndex = cache(async (): Promise<PhotoIndex> => {
+  const supabase = getSupabaseReadClient();
+  if (!supabase) return {};
+
+  const { data, error } = await supabase
+    .from("product_photos")
+    .select("product_id,public_id,posisi")
+    .order("posisi", { ascending: true });
+
+  if (error) {
+    console.warn(`[products] foto tambahan tidak terbaca: ${error.message}`);
+    return {};
+  }
+
+  const index: PhotoIndex = {};
+  ((data || []) as { product_id: string; public_id: string; posisi: number }[]).forEach((row) => {
+    const list = index[row.product_id] || (index[row.product_id] = []);
+    list.push({ public_id: row.public_id, posisi: row.posisi });
+  });
+  return index;
+});
+
 // Semua produk aktif (termasuk setiap varian warna), urut kode_barang ascending.
 // Dipakai sebagai sumber untuk collapse grup & resolusi slug varian.
 export const getCatalogProducts = cache(async (): Promise<Product[]> => {
-  const state = await getCatalogState();
-  return state.rows.map(toProduct);
+  const [state, photos] = await Promise.all([getCatalogState(), getPhotoIndex()]);
+  return state.rows.map((row) => toProduct(row, photos[row.id]));
 });
 
 // Kunci tampilan sebuah produk di listing: slug grup bila tergabung, else slug sendiri.
@@ -72,8 +99,8 @@ export const getProducts = cache(async (): Promise<Product[]> => {
 export const LANDING_SHOWCASE_SIZE = 8;
 
 export const getFeaturedProducts = cache(async (): Promise<Product[]> => {
-  const state = await getCatalogState();
-  const mapped = state.rows.map(toProduct);
+  const [state, photos] = await Promise.all([getCatalogState(), getPhotoIndex()]);
+  const mapped = state.rows.map((row) => toProduct(row, photos[row.id]));
   const featured = mapped.filter((product, index) => {
     const row = state.rows[index];
     return row.is_featured === true;

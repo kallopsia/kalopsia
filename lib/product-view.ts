@@ -2,6 +2,7 @@ import type { Product, ProductRow, SpecRingkas } from "@/types/product";
 import { productPlaceholder } from "./placeholder";
 import { hasPrice, srpToRupiah } from "./pricing";
 import { hasKodePrefix, stripKodePrefix } from "./kode-barang";
+import { mergeProductPhotos, type PhotoRef } from "./photo-url";
 
 // Brand diturunkan dari segmen kode brand pada prefix lama (PR-LAP-<SEG>-...).
 export const BRAND_FROM_CODE_SEGMENT: Record<string, string> = {
@@ -113,10 +114,13 @@ function osLabel(value: string): string {
   return "Chrome OS";
 }
 
-export function toProduct(row: ProductRow): Product {
+// `photos` = baris product_photos milik produk ini (hasil sinkron Cloudinary).
+// Foto kurasi manual di products.image_urls selalu lebih dulu, jadi sinkron
+// tidak pernah menggeser gambar utama yang sudah diatur admin.
+export function toProduct(row: ProductRow, photos?: PhotoRef[] | null): Product {
   const spesifikasiText = normalizeSpace(row.spesifikasi || "");
   const brand = brandFromKode(row.kode_barang, spesifikasiText);
-  const images = (row.image_urls || []).filter(Boolean);
+  const images = mergeProductPhotos(row.image_urls, photos);
   const namaProduk = (row.nama_produk || "").trim();
   const nama = namaProduk || productName(spesifikasiText);
   const stok = row.stok === null || row.stok === undefined ? null : Number(row.stok);
