@@ -8,7 +8,7 @@ import { productPlaceholder } from "@/lib/placeholder";
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export const metadata = {
-  title: "Sparepart — KALOPSIA TECH",
+  title: "Sparepart",
   description:
     "Daftar sparepart laptop yang tersedia: baterai, keyboard, RAM, SSD, charger, dan lainnya. Pesan lewat WhatsApp.",
 };

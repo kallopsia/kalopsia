@@ -9,7 +9,7 @@ import ColorControl from "@/components/admin/ColorControl";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Ubah Produk — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Ubah Produk" };
 
 interface EditProductPageProps {
   params: { id: string };

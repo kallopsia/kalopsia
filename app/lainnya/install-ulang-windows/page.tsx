@@ -6,7 +6,7 @@ import { formatServicePrice, HARGA_BELUM_TERSEDIA } from "@/lib/pricing";
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export const metadata = {
-  title: "Install Ulang Windows — KALOPSIA TECH",
+  title: "Install Ulang Windows",
   description:
     "Jasa install ulang Windows untuk laptop: sistem bersih, driver lengkap, aplikasi dasar siap pakai. Pesan lewat WhatsApp.",
 };

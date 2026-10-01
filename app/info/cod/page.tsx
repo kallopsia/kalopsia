@@ -3,7 +3,7 @@ import PageShell from "@/components/PageShell";
 import FaqAccordion, { type FaqItem } from "@/components/FaqAccordion";
 
 export const metadata = {
-  title: "COD — KALOPSIA TECH",
+  title: "COD",
   description:
     "Layanan bayar di tempat (COD) untuk wilayah Bandung, dan pengiriman lewat ekspedisi untuk luar Bandung.",
 };

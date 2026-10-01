@@ -5,7 +5,7 @@ import ServiceItemForm from "@/components/admin/ServiceItemForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Tambah Sparepart — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Tambah Sparepart" };
 
 export default async function NewSparepartPage() {
   await requireAdmin();

@@ -5,7 +5,7 @@ import ServiceItemForm from "@/components/admin/ServiceItemForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Tambah Software — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Tambah Software" };
 
 export default async function NewSoftwarePage() {
   await requireAdmin();

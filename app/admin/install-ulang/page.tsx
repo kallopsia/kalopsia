@@ -4,7 +4,7 @@ import WindowsInstallForm from "@/components/admin/WindowsInstallForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Install Ulang Windows — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Install Ulang Windows" };
 
 export default async function AdminWindowsInstallPage() {
   await requireAdmin();

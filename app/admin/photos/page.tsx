@@ -9,7 +9,7 @@ import { cardClass } from "@/components/admin/styles";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Sinkron Foto — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Sinkron Foto" };
 
 function formatDate(value: string | null): string {
   if (!value) return "belum pernah";

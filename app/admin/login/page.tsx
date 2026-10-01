@@ -3,7 +3,7 @@ import LoginForm from "@/components/admin/LoginForm";
 import { SUPABASE_MISSING_MESSAGE, isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Masuk Admin — KALOPSIA TECH",
+  title: "Masuk Admin",
   robots: { index: false, follow: false },
 };
 

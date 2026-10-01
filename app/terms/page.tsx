@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 
-export const metadata: Metadata = { title: "Terms — KALOPSIA TECH" };
+export const metadata: Metadata = { title: "Terms" };
 
 export default function TermsPage() {
   return (

@@ -29,7 +29,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: KategoriPageProps): Promise<Metadata> {
   return {
-    title: `Katalog ${params.kategori} — KALOPSIA TECH`,
+    title: `Katalog ${params.kategori}`,
     description: `Semua unit laptop kategori ${params.kategori} pada inventaris KALOPSIA TECH.`,
   };
 }

@@ -12,7 +12,7 @@ import {
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export const metadata: Metadata = {
-  title: "KALOPSIA TECH — Laptop Terkurasi",
+  title: "KALOPSIA TECH",
   description:
     "Seleksi laptop unggulan dari Acer, ASUS, Lenovo, Apple, HP, Dell, MSI, dan lainnya. Pesan lewat WhatsApp.",
 };

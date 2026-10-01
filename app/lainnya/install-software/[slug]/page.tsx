@@ -14,9 +14,9 @@ export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export async function generateMetadata({ params }: SoftwareDetailPageProps): Promise<Metadata> {
   const software = await getSoftwareBySlug(params.slug);
-  if (!software) return { title: "Software Tidak Ditemukan — KALOPSIA TECH" };
+  if (!software) return { title: "Software Tidak Ditemukan" };
   return {
-    title: `Install ${software.nama} (${formatServicePrice(software.harga)}) — KALOPSIA TECH`,
+    title: `Install ${software.nama} (${formatServicePrice(software.harga)})`,
     description: `Jasa install ${software.nama}. Biaya install ${formatServicePrice(
       software.harga
     )}. Pesan lewat WhatsApp.`,

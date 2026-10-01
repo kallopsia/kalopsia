@@ -7,7 +7,7 @@ import { productPlaceholder } from "@/lib/placeholder";
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export const metadata = {
-  title: "Install Software — KALOPSIA TECH",
+  title: "Install Software",
   description:
     "Daftar software yang bisa kami pasangkan di laptop kamu, lengkap dengan biaya install dan spesifikasi minimum.",
 };

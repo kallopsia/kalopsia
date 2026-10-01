@@ -5,7 +5,7 @@ import type { ProductAddonRow } from "@/types/addon";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Add-on — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Add-on" };
 
 export default async function AdminAddonsPage() {
   await requireAdmin();

@@ -16,7 +16,7 @@ import type { SoftwareRow } from "@/types/service";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Install Software — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Install Software" };
 
 export default async function AdminSoftwarePage() {
   await requireAdmin();

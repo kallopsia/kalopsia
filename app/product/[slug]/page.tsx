@@ -22,11 +22,11 @@ export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
   if (!product) {
-    return { title: "Produk Tidak Ditemukan — KALOPSIA TECH" };
+    return { title: "Produk Tidak Ditemukan" };
   }
 
   return {
-    title: `${product.nama} (${formatSrp(product.srp)}) — KALOPSIA TECH`,
+    title: `${product.nama} (${formatSrp(product.srp)})`,
     description: `${product.brand} ${product.nama}. Spesifikasi: ${product.spesifikasiText}. Pesan lewat WhatsApp.`,
   };
 }

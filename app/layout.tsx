@@ -14,7 +14,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KALOPSIA TECH — Toko Laptop & Spesifikasi Teknis",
+  title: "KALOPSIA TECH",
   description: "Katalog spesifikasi laptop terkurasi dengan checkout langsung via WhatsApp.",
 };
 

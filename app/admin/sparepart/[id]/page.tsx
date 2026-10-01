@@ -7,7 +7,7 @@ import ServiceItemForm from "@/components/admin/ServiceItemForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Ubah Sparepart — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Ubah Sparepart" };
 
 interface EditSparepartPageProps {
   params: { id: string };

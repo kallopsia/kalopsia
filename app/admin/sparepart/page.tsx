@@ -16,7 +16,7 @@ import type { SparepartRow } from "@/types/service";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Sparepart — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Sparepart" };
 
 export default async function AdminSparepartPage() {
   await requireAdmin();

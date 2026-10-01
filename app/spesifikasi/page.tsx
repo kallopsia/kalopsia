@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import CatalogPagination from "@/components/CatalogPagination";
 import CatalogEmptyState from "@/components/CatalogEmptyState";
 import { getProducts, getCatalogStatus, PRODUCTS_REVALIDATE_SECONDS } from "@/lib/products";
 import { formatSrp } from "@/lib/pricing";
+
+export const metadata: Metadata = { title: "Indeks Spesifikasi" };
 
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 

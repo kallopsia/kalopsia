@@ -13,7 +13,7 @@ import type { ProductRow } from "@/types/product";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Produk — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Produk" };
 
 interface ProductsPageProps {
   searchParams: {

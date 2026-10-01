@@ -4,7 +4,7 @@ import ImportPanel from "@/components/admin/ImportPanel";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Impor Excel — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Impor Excel" };
 
 export default async function AdminImportPage() {
   await requireAdmin();

@@ -14,9 +14,9 @@ export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export async function generateMetadata({ params }: SparepartDetailPageProps): Promise<Metadata> {
   const sparepart = await getSparepartBySlug(params.slug);
-  if (!sparepart) return { title: "Sparepart Tidak Ditemukan — KALOPSIA TECH" };
+  if (!sparepart) return { title: "Sparepart Tidak Ditemukan" };
   return {
-    title: `${sparepart.nama} (${formatServicePrice(sparepart.harga)}) — KALOPSIA TECH`,
+    title: `${sparepart.nama} (${formatServicePrice(sparepart.harga)})`,
     description: `Sparepart ${sparepart.nama}. Harga ${formatServicePrice(
       sparepart.harga
     )}. Pesan lewat WhatsApp.`,

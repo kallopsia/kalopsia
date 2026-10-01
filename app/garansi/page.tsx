@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import PageShell from "@/components/PageShell";
+
+export const metadata: Metadata = { title: "Garansi" };
 
 const BLOCKS = [
   {

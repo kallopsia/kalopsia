@@ -8,7 +8,7 @@ import { getProducts, getCatalogStatus, PRODUCTS_REVALIDATE_SECONDS } from "@/li
 export const revalidate = PRODUCTS_REVALIDATE_SECONDS;
 
 export const metadata: Metadata = {
-  title: "Shop — KALOPSIA TECH",
+  title: "Shop",
   description:
     "Katalog laptop lengkap dari Acer, ASUS, Lenovo, Apple, HP, Dell, MSI, dan lainnya. Pesan lewat WhatsApp.",
 };

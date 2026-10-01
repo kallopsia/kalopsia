@@ -6,7 +6,7 @@ import type { OrderIntentRow } from "@/types/order-intent";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin // Pesanan — KALOPSIA TECH" };
+export const metadata = { title: "Admin // Pesanan" };
 
 const JENIS_LABEL: Record<OrderIntentRow["jenis"], string> = {
   produk: "Produk",

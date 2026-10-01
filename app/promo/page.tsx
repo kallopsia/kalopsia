@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import PageShell from "@/components/PageShell";
+
+export const metadata: Metadata = { title: "Promo Aktif" };
 
 export default function PromoPage() {
   return (

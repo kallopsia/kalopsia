@@ -2,7 +2,7 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 
 export const metadata = {
-  title: "Cek Stok — KALOPSIA TECH",
+  title: "Cek Stok",
   description:
     "Stok unit berubah sewaktu-waktu. Tanyakan ketersediaan laptop incaran kamu langsung ke admin lewat WhatsApp.",
 };
