@@ -10,7 +10,7 @@
  *   (a) SKU yang akan terisi beserta jumlah foto + folder sumber,
  *   (b) folder pemetaan yang kosong / tidak ada di Cloudinary,
  *   (c) folder di Cloudinary yang berisi foto tapi tidak ditunjuk SKU mana pun,
- *   (d) berkas yang tidak cocok pola numerik dan dilewati.
+ *   (d) berkas non-gambar yang dilewati.
  * Selain itu daftar SKU yang masih menyimpan foto sinkron dari folder yang kini
  * kosong (baris tersebut tidak dihapus otomatis).
  */
@@ -122,7 +122,7 @@ async function main() {
   }
 
   if (report.skippedFiles.length > 0) {
-    console.log(`\n• (d) berkas tidak cocok pola numerik, dilewati (maks 40):`);
+    console.log(`\n• (d) berkas non-gambar, dilewati (maks 40):`);
     report.skippedFiles.slice(0, 40).forEach((file) =>
       console.log(`    ${file.folder}/${file.fileName} (${file.reason})`)
     );

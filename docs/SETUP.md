@@ -248,11 +248,19 @@ Yang perlu diketahui sebelum mulai:
   `Nama Folder`) — contoh `Daftar_Folder_Foto_Laptop.xlsx`. Sistem **tidak pernah** menebak
   folder dari kode barang atau nama produk.
 - **Satu folder boleh dipakai banyak SKU** (mis. warna berbeda dengan foto sama).
-- **Struktur folder** di Cloudinary: `{PREFIX}/{Nama Folder}/1.jpg`, `2.jpg`, …
-  dengan `PREFIX = laptop` (konstanta `CLOUDINARY_FOLDER_PREFIX` di `lib/photo-config.ts`).
-- **Format & urutan**: jpg/jpeg/png/webp, diurutkan numerik (1, 2, 10 — bukan leksikografis),
-  file `1` = foto utama. Maksimal **24 foto per produk**; berkas di atas batas atau bernama
-  non-numerik (mis. `pola.jpg`) **dilewati dan dilaporkan**, tidak membuat sinkron gagal.
+- **Struktur folder** di Cloudinary: `{PREFIX}/{Nama Folder}/…foto…` dengan `PREFIX = laptop`
+  (konstanta `CLOUDINARY_FOLDER_PREFIX` di `lib/photo-config.ts`). Boleh ada satu tingkat
+  folder brand di antaranya (`laptop/apple/PR-LAP-AP-MDHA4ID`) — pencocokan memakai segmen
+  terdalam.
+- **Format & urutan**: jpg/jpeg/png/webp/avif, nama berkas bebas. Berkas bernama angka
+  (`1.jpg`, `2.png`, `10.webp`) diurutkan lebih dulu sesuai nilainya dan `1` jadi foto utama,
+  sisanya urut abjad-natural (`asus.webp`, `asus2.webp`, `asus10.webp`). Maksimal **24 foto
+  per produk**; berkas di atas batas dan berkas non-gambar (mis. `sampul.pdf`) **dilewati dan
+  dilaporkan**, tidak membuat sinkron gagal.
+- **Aset hasil "move" di Media Library tetap terbaca**: listing memakai Search API
+  (`folder:"laptop*"`) dan membaca `asset_folder` + `display_name`, jadi aset yang `public_id`-nya
+  tetap datar (mis. `copy_of_macbook_1`) tidak hilang. Yang disimpan ke database adalah
+  `public_id` asli dari Cloudinary.
 - **Pencocokan folder** tidak peka besar/kecil dan mengabaikan spasi berlebih; yang dibandingkan
   adalah segmen folder terdalam, jadi `laptop/PR-LAP-AC-A715` di Cloudinary cocok dengan
   `PR-LAP-AC-A715` di sheet.
@@ -288,7 +296,7 @@ Yang perlu diketahui sebelum mulai:
      sinkron lama (barisnya **tidak** dihapus otomatis, perlu keputusan admin);
    - **(c) folder yatim** — folder di Cloudinary yang berisi foto tapi tidak ditunjuk SKU mana
      pun, beserta folder brand yang dikecualikan;
-   - **(d) berkas dilewati** — nama tidak sesuai pola + berkas yang melebihi batas 24 foto.
+   - **(d) berkas dilewati** — berkas non-gambar + berkas yang melebihi batas 24 foto.
 5. Klik **simpan hasil** (hanya aktif bila dry-run menemukan sesuatu yang perlu ditulis).
    Sistem mengganti baris `sumber='sync'` per SKU, memanggil `revalidateTag('products')`,
    lalu katalog langsung memakai foto baru.
@@ -421,7 +429,7 @@ ia hanya menulis tabel `product_photos`.
 | Upload gambar gagal | Cloudinary belum dikonfigurasi, atau preset unsigned salah nama, atau `CLOUDINARY_API_SECRET` belum diisi untuk mode signed. |
 | Halaman `/admin/photos` banner merah "tabel belum ada" | Migrasi `20261007000000_product_photos.sql` belum dijalankan di Supabase. |
 | Dry-run foto: semua folder "belum dibuat" / 0 aset | Foto belum diunggah ke bawah prefix `laptop`, atau `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` salah (Admin API menolak). Cek `report.warnings` di layar atau output script. |
-| SKU tertentu tidak dapat foto padahal foldernya ada | Nama folder dibandingkan pada **segmen terdalam** (huruf kecil, spasi berlebih diabaikan), jadi sheet harus menunjuk folder yang sama dengan yang ada di Cloudinary. Cek juga brand dikecualikan (GIGABYTE/SPC/TECNO/ZYREX) dan nama berkas: harus `1.jpg`, `2.png`, … bukan `foto-1.jpg`. |
+| SKU tertentu tidak dapat foto padahal foldernya ada | Nama folder dibandingkan pada **segmen terdalam** (huruf kecil, spasi berlebih diabaikan), jadi sheet harus menunjuk folder yang sama dengan yang ada di Cloudinary. Cek juga brand dikecualikan (GIGABYTE/SPC/TECNO/ZYREX), status SKU `dilindungi` karena sudah punya `image_urls` manual (centang **timpa** bila memang mau diganti), dan ekstensi berkas — hanya jpg/jpeg/png/webp/avif yang dipakai. |
 | Foto sinkron tidak muncul padahal sudah disimpan | Cache Next: simpan sudah memanggil `revalidateTag('products')`; tunggu maksimal 1 jam di produksi (`PRODUCTS_REVALIDATE_SECONDS = 3600`) atau restart dev server. |
 | Perubahan admin tidak muncul di toko | Cache Next. Impor/edit sudah memanggil `revalidateTag`; tunggu maksimal 1 jam (`PRODUCTS_REVALIDATE_SECONDS = 3600`) atau restart server dev. |
 | `npm run db:seed` gagal `.env.local tidak ditemukan` | Jalankan dari root proyek, atau ekspor env secara manual sebelum menjalankan script. |

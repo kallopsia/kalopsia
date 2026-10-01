@@ -93,7 +93,7 @@ npm run start
 │   ├── color-category.ts       # Deteksi warna (longest-match, word-boundary) + kunci grup varian (murni)
 │   ├── product-color.ts        # Server-only: deteksi warna, override manual, regroup varian
 │   ├── photo-config.ts         # Prefix Cloudinary `laptop`, brand dikecualikan, parse kode brand
-│   ├── photo-file.ts           # Nama berkas 1.jpg/2.png…, sort numerik, batas 24 foto/produk
+│   ├── photo-file.ts           # Urutan foto per folder (angka dulu, lalu abjad-natural), batas 24/produk
 │   ├── photo-mapping.ts        # Normalisasi + penggabungan sheet "Pemetaan SKU" ke produk
 │   ├── photo-mapping-parser.ts # Baca xlsx/CSV pemetaan (kolom KODEBARANG + folder/URL foto)
 │   ├── photo-sync.ts           # Engine sinkron: plan dry-run, folder kosong, yatim, foto basi
@@ -130,9 +130,12 @@ npm run start
 - **Sinkron foto Cloudinary** (`/admin/photos`): sumber kebenaran pemetaan adalah sheet
   **`Pemetaan SKU`** di Excel foto (kolom `KODEBARANG` + nama folder) — sistem **tidak pernah**
   menebak folder dari kode barang atau nama produk. Satu folder bisa melayani banyak SKU, dan
-  satu SKU bisa di-override manual ke folder lain. Foto diharapkan berada di
-  `laptop/<Nama Folder>/1.jpg`, `2.jpg`, dst. (jpg/jpeg/png/webp, urut numerik, file `1` = utama,
-  maksimal 24 foto per produk; berkas non-numerik dilewati dan dilaporkan). Brand
+  satu SKU bisa di-override manual ke folder lain. Foto berada di `laptop/<Nama Folder>/…`
+  (boleh bersarang satu tingkat, mis. `laptop/apple/PR-LAP-AP-MDHA4ID`); format
+  jpg/jpeg/png/webp/avif dengan nama berkas bebas — berkas bernama angka diurutkan lebih dulu
+  sesuai nilainya (`1` = foto utama), sisanya urut abjad-natural, maksimal 24 foto per produk;
+  berkas non-gambar dilewati dan dilaporkan. Aset yang dipindah lewat Media Library tetap
+  terbaca (listing memakai Search API + `asset_folder`). Brand
   **GIGABYTE, SPC, TECNO, ZYREX** dikecualikan (`lib/photo-config.ts`). Hasil sinkron disimpan
   sebagai `public_id` di tabel `product_photos` dan dirender dengan transformasi
   `f_auto,q_auto`; **impor dan sinkron tidak pernah menyentuh `products.image_urls`** — foto

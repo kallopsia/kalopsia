@@ -328,9 +328,9 @@ export default function PhotoSyncPanel({ defaultPrefix }: { defaultPrefix: strin
           </Section>
 
           <Section
-            title={`(d) berkas dilewati (${report.skippedFiles.length})`}
+            title={`(d) berkas non-gambar dilewati (${report.skippedFiles.length})`}
             count={report.skippedFiles.length}
-            empty="Semua berkas cocok pola 1.jpg, 2.jpg, ... (jpg/jpeg/png/webp)."
+            empty="Semua berkas di folder pemetaan adalah gambar yang bisa dipakai."
           >
             <ListTable
               head={["Berkas", "Alasan"]}
